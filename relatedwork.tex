@@ -1,8 +1,8 @@
 \chapter{Related Work}
-This chapter presents the related work on which this project was built on. The basis was the work done at General Acoustics e.K. particularly from Dipl. Ing. Jan Schirrmacher in previous projects containing an ADCP. Afterwards an in-depth introduction on the used ADCP from Rowe Technologies, Inc. will provide the needed background information in thhis field. Finally the used external libraries will be presented to give background information needed further in the report.
+This chapter presents the related work on which this project was built on. The basis was the work done at General Acoustics e.K. particularly from Dipl. Ing. Jan Schirrmacher in previous projects containing an ADCP. Afterwards an in-depth introduction on the used ADCP from Rowe Technologies, Inc. will provide the needed background information in this field. Finally the used external libraries will be presented to give background information needed further in the report.
 
 \section{General Acoustics e.K.}
-Due to previous projects with ADCP's a lot of knowledge about the technology was allready available from General Acoustics e.K. A look at the algorithms of the current ADCP parser as well as other libraries used in this context gave a good introduction into the problem and helped a lot in architectural decisions. The libraries were developed by Jan Schirrmacher in Delphi and thus only available for Windows. Figure 2.1 shows a code snippet in Delphi from the ADCP parser function currently used in various applications. Without this help the implementation would propably not have been possible in the time-frame of this project.
+Due to previous projects with ADCP's a lot of knowledge about the technology was already available from General Acoustics e.K. A look at the algorithms of the current ADCP parser as well as other libraries used in this context gave a good introduction into the problem and helped a lot in architectural decisions. The libraries were developed by Jan Schirrmacher in Delphi and thus only available for Windows. Figure 2.1 shows a code snippet in Delphi from the ADCP parser function currently used in various applications. Without this help the implementation would probably not have been possible in the time-frame of this project.
 %delphicode 
 \begin{figure}[b]
 \centering
@@ -18,11 +18,11 @@ The reference ADCP used for this project is produced by Rowe Technologies [2]. I
       \includegraphics[width=0.8\textwidth]{adcp}
         \caption{A picture of the ADCP referenced in this project. }
 \end{figure}
-The used ADCP is configured to measure a maximum of 15 meter distance devided into 30 discreet bins of 0.5m. The 4 horizontal beams are used to measure the flow currents and directions, internal signal processing is used to calculate the correct earth coordinates (East, North, Up) based on the ADCP position and heading, pitch and roll angles. The single beam is used to measure the water level.\\
-The ADCP is configured to ping at 6Hz always alternating eighter a horizontal or a vertical ping. It operates in bursts, one burst every 10 minutes. One burst consists of 2048 pings where 1024 are horizontal and 1024 are vertical pings. A ping is also called ensemble. Therefore a burst is defined as a collection of 2048 ensembles, measured over a period of ~6-7 minutes. An ensemble contains the data of one ping, the structure of the data is presented furtheron in the report. The collected data is then sendt burstwise over RS485 at 460800 Baud to a datalogger on the offshore platform.
+The used ADCP is configured to measure a maximum of 15 meter distance divided into 30 discreet bins of 0.5 m. The four horizontal beams are used to measure the flow currents and directions, internal signal processing is used to calculate the correct earth coordinates (East, North, Up) based on the ADCP position and heading, pitch and roll angles. The single beam is used to measure the water level.\\
+The ADCP is configured to ping at 6Hz always alternating either a horizontal or a vertical ping. It operates in bursts, one burst every 10 minutes. One burst consists of 2048 pings where 1024 are horizontal and 1024 are vertical pings. A ping is also called ensemble. Therefore a burst is defined as a collection of 2048 ensembles, measured over a period of ~6-7 minutes. An ensemble contains the data of one ping, the structure of the data is presented further-on in the report. The collected data is then sent burst-wise over RS485 at 460800 Baud to a data-logger on the offshore platform.
 
 An ADCP ensemble consists of three sections. The first section is a 32 byte header. The header consists of 16 bytes containing 0x80, followed by a four byte \texttt{uint32} ensemble number. The next four bytes contain the ones-compliment of the ensemble number. The last eight bytes contain the \texttt{uint32} payload size in bytes as well as its ones-compliment.\\
-The middle section contains the payload as Matlab version 4 file. A Matlab-file may contain one or more matrices. The matrices are written sequentially to a file,  forming a continuous byte stream. Each matrix starts with a fixed-length 20-byte header that contains information describing certain attributes of the Matrix. The header consists of five long 4-byte integers. After the Header the matrix data follows in the numerical fromat specified in the header. The data contains rows $\times$ columns number of elements.
+The middle section contains the payload as MATLAB version 4 file. A MATLAB-file may contain one or more matrices. The matrices are written sequentially to a file,  forming a continuous byte stream. Each matrix starts with a fixed-length 20-byte header that contains information describing certain attributes of the Matrix. The header consists of five long 4-byte integers. After the Header the matrix data follows in the numerical format specified in the header. The data contains rows $\times$ columns number of elements.
 The payload of an ensemble contains a series of matrices named E000001 to E000015. Depending on the ensemble type not all matrices may be available.\\
 The last part is a four byte CRC16 checksum over all bytes in the payload. The first two bytes are always 0, the second two bytes contain the CRC16 value. The value is based on the CCITT 16 bit algorithm following the formula 
 
@@ -41,7 +41,7 @@ Figure 2.3 shows the first few bytes of an ensemble.
 \begin{itemize}
 \item Yellow marked is the word \texttt{START} followed by \texttt{CRLF}. This was captured when the ADCP was started.
 \item Green colored is the 32 byte ensemble header, it begins with the 16 bytes of 0x80.
-\item Cyan is the matlab version 4 matrix-header containing 4 integer values which are set to 10,20,4, and 8.  
+\item Cyan is the MATLAB version 4 matrix-header containing 4 integer values which are set to 10,20,4, and 8.  
 \begin{itemize}
 \item The 10 indicates the matrix contains 4 byte floating point numbers. 
 \item 20 is the number of rows in the matrix which is number bins in the ADCP profile. 
@@ -60,35 +60,35 @@ The matrices that are used for further processing are:
 \begin{itemize}
 \item ``E000001'' - Bins $\times$ Beams of single precision floating points containing  the Beam coordinate velocity profile data as measured along each beam. The data is useful for diagnostic purposes and for when the user wants to perform their own transformation. In the context of this project the data is only used for further wave analysis, and only from the vertical pings.
 \item``E000003'' - Bins $\times$ Beams of single precision floating points containing the Earth coordinate velocity profile in m/s. 
-\item ``E000008'' - Twentytwo 32 bit Integers containing various ensemble data, the ensemble number, timestamp, number of bins and beams as well as the ADCP system configuration.
+\item ``E000008'' - Twenty-two 32 bit Integers containing various ensemble data, the ensemble number, time-stamp, number of bins and beams as well as the ADCP system configuration.
 \item ``E000009'' - Thirteen single precision floating points containing various ancillary data, e.g. water pressure and water temperature.
 \item ``E000015'' - 1 + 3 $\times$ Beams of single precision floating points containing e.g. the water level. 
 \end{itemize}
 
 \section{Libraries}
-For the implementation of this project, a number of external libraries were used to simply the developement process. The decision for or against various libraries is illustrated in Chapter 3, at this point, only the libraries used in the implementation are described.
+For the implementation of this project, a number of external libraries were used to simply the development process. The decision for or against various libraries is illustrated in Chapter 3, at this point, only the libraries used in the implementation are described.
 \subsection{Boost}
-Boost is a collection of libraries for the C++ programmig language. It contains over eighty individueal and portable libraries to support a wide range of use cases.Figure 2.4 presents a list of the core libraries contained in boost.
+Boost is a collection of libraries for the C++ programming language. It contains over eighty individual and portable libraries to support a wide range of use cases.Figure 2.4 presents a list of the core libraries contained in boost.
 \begin{figure}[h]
 \centering
       \includegraphics[width=0.8\textwidth]{boost}
         \caption{A list of the most important Boost libraries.}
 \end{figure}
-The libraries are licenced under Boost Software Licence [] wich are designed to be used for both free and proprietary software. A lot of boost libraries get accepted for new C++ standards, the latest big incorporation was when the C++11 standard was introduced. Most Boost libraries are header only consisting inline functionality and templates some libraries have to be compiled seperately.\\
-In the developement of this software project, mainly the following boost libraries were used:
+The libraries are licensed under Boost Software License [] which are designed to be used for both free and proprietary software. A lot of boost libraries get accepted for new C++ standards, the latest big incorporation was when the C++11 standard was introduced. Most Boost libraries are header only consisting in-line functionality and templates some libraries have to be compiled separately.\\
+In the development of this software project, mainly the following boost libraries were used:
 \begin{itemize}
-\item \texttt{boost::asio} - Boost.Asio is a cross-platform C++ library for network and low-level I/O programming that provides developers with a consistent asynchronous model using a modern C++ approach [http://www.boost.org/doc/libs/1\_61\_0/doc/html/boost\_asio.html]. In this projet only the serial port functionality was used.
-\item \texttt{boost::filesystem} - The Boost.Filesystem library provides platform independant facilities to manipulate files and directories, and the paths that identify them [http://www.boost.org/doc/libs/1\_61\_0/libs/filesystem/doc/index.htm].
+\item \texttt{boost::asio} - Boost.Asio is a cross-platform C++ library for network and low-level I/O programming that provides developers with a consistent asynchronous model using a modern C++ approach [http://www.boost.org/doc/libs/1\_61\_0/doc/html/boost\_asio.html]. In this project only the serial port functionality was used.
+\item \texttt{boost::filesystem} - The Boost.Filesystem library provides platform independent facilities to manipulate files and directories, and the paths that identify them [http://www.boost.org/doc/libs/1\_61\_0/libs/filesystem/doc/index.htm].
 \item \texttt{boost::programoptions} - Boost.Program\_options allows program developers to obtain program options, that is (name, value) pairs from the user, via conventional methods such as command line and config files [http://www.boost.org/doc/libs/1\_61\_0/doc/html/program\_options.html]. 
 \item \texttt{boost::test} - Boost.Test is a library with support for simple program testing, full unit testing, and for program execution monitoring[http://www.boost.org/doc/libs/1\_61\_0/libs/test/doc/html/boost\_test/intro.html].
 \item \texttt{boost::thread} - Portable C++ multi-threading implemented in C++11 and C++14. This library  enables the use of multiple threads of execution with shared data in portable C++ code. It provides classes and functions for managing the threads themselves, along with others for synchronizing data between the threads or providing separate copies of data specific to individual threads. [http://www.boost.org/doc/libs/1\_61\_0/doc/html/thread.html]
 \end{itemize}
-\subsection{Moodycamel Cuncurrent Queue}
+\subsection{Moodycamel Concurrent Queue}
 The Moodycamel concurrent queue is a industrial strength lock-free queue for C++ created by Carmen Desrochers. Its Features are a unbeaten fast performance, a single header implementation and full thread safety. It is developed completely in C++11 and uses move semantics wherever possible. The memory can be preallocated once or dynamically as needed. The queue is fully portable, as it relays only on standard C++11 primitives. It supports very fast bulk operations [].\\
-To proof the correctness of the corus of praise the author made performance tests where his queue beat various concurrent queues in all aspects. The suffering candidats were intels TBB queue [], Boost's lockfree queue and the STL queue with mutexes. The results can be found under \url{http://moodycamel.com/blog/2014/a-fast-
+To proof the correctness of the chorus of praise the author made performance tests where his queue beat various concurrent queues in all aspects. The suffering candidates were Intel's TBB queue [], Boost's lock-free queue and the STL queue with mutexes. The results can be found under \url{http://moodycamel.com/blog/2014/a-fast-
 general-purpose-lock-free-queue-for-c++#benchmarks}
 
-The following figure 2.5 lists the API of the queue in pseudocode:
+The following figure 2.5 lists the API of the queue in pseudo-code:
 
 \begin{figure}[h]
 \centering
@@ -96,6 +96,6 @@ The following figure 2.5 lists the API of the queue in pseudocode:
         \caption{The API of the \texttt{moodycamel::concurrentqueue}}
 \end{figure}
 
-The only troublesome method is \texttt{size\_approx()} because it cannot be determined for a consuming thread if the queue is comletle empty or if some enqueue operations did not propagate their memorystate to the asking thread. The solution proposed is the use of memory barriers. How they were implemented is shown in Chapter 4.
-\subsection{Serial Port Wraper}
+The only troublesome method is \texttt{size\_approx()} because it cannot be determined for a consuming thread if the queue is complete empty or if some enqueue operations did not propagate their memory-state to the asking thread. The solution proposed is the use of memory barriers. How they were implemented is shown in Chapter 4.
+\subsection{Serial Port Wrapper}
 The Serial-Port class was developed from Terraneo Federico []. It is a wrapper around the Boost.Asio serial port components and simplifies the work with serial ports. 
