@@ -9,12 +9,10 @@ To prevent such inconveniences in future projects General Acoustics e.K. decided
 The goal of this software project is the implementation of a modular parser for ADCP data. The resulting software will be the foundation of the concept above, it should be easily adaptable to support other sensors and data processing and analysis methods. 
 
 \section{Description of Work}
-The work of this project can be divided into two parts. The first part consisted of knowledge gathering regarding the ADCP technology as well as refinement of the requirements specified from General Acoustics e.K. These requirements define in the end the tools and library used later on. Based on these requirements the design of the application was decided. A determining factor was for example the requirement of the programming language, the project should be written in platform independent C++. %TODO expand
-
+The work of this project can be divided into two parts. The first part consisted of knowledge gathering regarding the ADCP technology as well as refinement of the requirements specified from General Acoustics e.K. These requirements define in the end the tools and library used later on. Based on these requirements the design of the application was decided. A determining factor was for example the requirement of the programming language, the project should be written in platform independent C++.\\
 The second part was the implementation of the components, first the standalone components without dependencies, they should be usable outside this project in other contexts and later the main program which integrates the previous components. The software had to compile and run on an x64 architecture with Windows and an arm-hf architecture with Debian Linux.
 
 %The last part was a test and bug-fixing phase where the software was tested under various conditions and scenarios. A key factor was the robustness under real-time operation.  %TODO expand
-
 \section{Thesis Outline}
 The report for this project is structured as follows: First, the related works are highlighted in Chapter 2 where the previous work from General Acoustics is shown, followed by an introduction to the ADCP technology and an overview of the used libraries is presented. Following up on the related works in Chapter 3, the design decision will be presented. The decisions both architectural and implementation specific are reasoned based on the requirements from General Acoustics e.K. In Chapter 4, the implementation of the components will be discussed in detail. The report ends with the Chapters 5, in which the evaluation of the implementation is discussed and Chapter 6 where it is finished with a summary and conclusion.
 

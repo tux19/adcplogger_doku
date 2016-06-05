@@ -251,7 +251,7 @@ The parser itself is a small finite state machine shown in figure 4.5. It is div
 
 \begin{figure}[h]
 \centering
-      \includegraphics[width=0.95\textwidth]{parser}
+      \includegraphics[width=0.7\textwidth]{parser}
         \caption{A state diagram of the ADCP parser}
 \end{figure}
 
@@ -263,7 +263,7 @@ The task turned out to be much more complicated than thought at first. A lot of 
 
 \begin{figure}[h]
 \centering
-      \includegraphics[width=0.95\textwidth]{repair}
+      \includegraphics[width=0.7\textwidth]{repair}
         \caption{A state diagram of the ADCP repair parser}
 \end{figure}
 
@@ -321,16 +321,9 @@ The output step is very similar to the input step. The class diagram in figure 4
 
 \begin{figure}[h]
 \centering
-      \includegraphics[width=0.95\textwidth]{input}
+      \includegraphics[width=0.95\textwidth]{output}
         \caption{A class diagram of the output components}
 \end{figure}
 
 Similar to the input components, the classes have only the \texttt{runOutput()} method where the business logic of the component was implemented. One of these functions will then be executed by the output thread. Both classes use a take their input data from a Moodycamel concurrent queue in form of a message. A message has a time-stamp and a vector of bytes. The message class is also located in the \texttt{BinaryIO.h} file together with the output components. In this application a message consists the data of one ensemble.\\ 
 The \texttt{BinaryFileOutput} class is used to store all incoming messages in a single file. The \texttt{BinaryFileListOutput} class generates a list of files. The decision if a new file is opened depends on the times-tamp of the message and a preset interval. One could store a whole day in a file, or only a burst of 10 minutes. In real-time operation it makes sense to open new files burst-wise. For this scenario  another option to open a new file exists, a new file is generated when  the ADCP doesn't send data for a specified period.
-
-
-%-------------------------------
-%\chapter{Testing}
-
-
- 
