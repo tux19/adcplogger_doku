@@ -55,7 +55,7 @@ The ADCP is configured to ping at 6Hz always alternating either a horizontal or 
 An ADCP ensemble consists of three sections. The first section is a 32 byte header. The header consists of 16 bytes containing 0x80, followed by a four byte \texttt{uint32} ensemble number. The next four bytes contain the ones-compliment of the ensemble number. The last eight bytes contain the \texttt{uint32} payload size in bytes as well as its ones-compliment.\\
 The middle section contains the payload as MATLAB version 4 file. A MATLAB-file may contain one or more matrices. The matrices are written sequentially to a file,  forming a continuous byte stream. Each matrix starts with a fixed-length 20-byte header that contains information describing certain attributes of the Matrix. The header consists of five long 4-byte integers. After the Header the matrix data follows in the numerical format specified in the header. The data contains rows $\times$ columns number of elements.
 The payload of an ensemble contains a series of matrices named E000001 to E000015. Depending on the ensemble type not all matrices may be available.\\
-The last part is a four byte CRC16 checksum over all bytes in the payload. The first two bytes are always 0, the second two bytes contain the CRC16 value. The value is based on the CCITT 16 bit algorithm following the formula 
+The last part is a four byte Cyclic Redundancy Check (CRC) checksum over all bytes in the payload. The first two bytes are always 0, the second two bytes contain the CRC16 value. The value is based on the International Telegraph and Telephone Consultative Committee (CCITT) 16 bit algorithm following the formula 
 
 $$ x^{16} + x^{12} + x^5 +1$$
 
@@ -67,8 +67,7 @@ If the 32 byte header is removed from each ensemble, Matlab is able to read in t
       \includegraphics[width=0.7\textwidth]{hexdump}
         \caption{A hex-capture of the first few bytes from an ensemble.}
 \end{figure}
-
-Figure 2.3 shows the first few bytes of an ensemble.
+Figure 2.2 shows the first few bytes of an ensemble.
 \begin{itemize}
 \item Yellow marked is the word \texttt{START} followed by \texttt{CRLF}. This was captured when the ADCP was started.
 \item Green colored is the 32 byte ensemble header, it begins with the 16 bytes of 0x80.
@@ -99,7 +98,7 @@ The matrices that are used for further processing are:
 \section{Libraries}
 For the implementation of this project, a number of external libraries were used to simply the development process. The decision for or against various libraries is illustrated in Chapter 3, at this point, only the libraries used in the implementation are described.
 \subsection{Boost}
-Boost is a collection of libraries for the C++ programming language. It contains over eighty individual and portable libraries to support a wide range of use cases. Figure 2.4 presents a list of the libraries contained in boost.
+Boost is a collection of libraries for the C++ programming language. It contains over eighty individual and portable libraries to support a wide range of use cases. Figure 2.3 presents a list of the libraries contained in Boost.
 \begin{figure}[h]
 \centering
       \includegraphics[width=0.8\textwidth]{boost}
@@ -116,7 +115,7 @@ In the development of this software project, mainly the following boost librarie
 \end{itemize}
 \subsection{Moodycamel Concurrent Queue}
 The Moodycamel concurrent queue is a industrial strength lock-free queue for C++ created by Carmen Desrochers. Its Features are a unbeaten fast performance, a single header implementation and full thread safety. It is developed completely in C++11 and uses move semantics wherever possible. The memory can be preallocated once or dynamically as needed. The queue is fully portable, as it relays only on standard C++11 primitives. It supports very fast bulk operations \cite{moody}.\\
-To proof the correctness of the chorus of praise the author made performance tests where his queue beat various concurrent queues in all aspects. The suffering candidates were Intel's TBB queue \cite{intel_tbb}, Boost's lock-free queue and the STL queue with mutexes. The results can be found under \cite{benchmark}. The figure 2.5 lists the API of the queue in pseudo-code.
+To proof the correctness of the chorus of praise the author made performance tests where his queue beat various concurrent queues in all aspects. The suffering candidates were Intel's TBB queue \cite{intel_tbb}, Boost's lock-free queue and the STL queue with mutexes. The results can be found under \cite{benchmark}. The figure 2.4 lists the API of the queue in pseudo-code.
 \begin{figure}[h]
 \centering
       \includegraphics[width=0.6\textwidth]{moody}
