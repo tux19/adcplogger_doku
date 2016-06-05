@@ -317,7 +317,17 @@ if(posE4 != payloadP->end() && posE3 < posE4 && posE4 < posE8){
 This Algorithm only works reliable if the number of missing bytes is not too low. It also has room of improvement but it was not a core requirement of this project, so further development would have meant unnecessary effort. The result can be seen as `good-enough'. Originally only 20 out of 2048 ensembles were healthy, with this function the number could be raised to over 800 which was enough for further wave analysis.
 
 \subsection{Output Step}
-The output step \cite{adcp}
+The output step is very similar to the input step. The class diagram in figure 4.7) shows the two output components \texttt{BinaryFileOutput} and \texttt{BinaryFileListOutput} as specified in the design decisions. th classes are derived from the abstract class \texttt{BinaryOutput} and are located in the file \texttt{BinaryIO.h} together with the input classes.
+
+\begin{figure}[h]
+\centering
+      \includegraphics[width=0.95\textwidth]{input}
+        \caption{A class diagram of the output components}
+\end{figure}
+
+Similar to the input components, the classes have only the \texttt{runOutput()} method where the business logic of the component was implemented. One of these functions will then be executed by the output thread. Both classes use a take their input data from a Moodycamel concurrent queue in form of a message. A message has a time-stamp and a vector of bytes. The message class is also located in the \texttt{BinaryIO.h} file together with the output components. In this application a message consists the data of one ensemble.\\ 
+The \texttt{BinaryFileOutput} class is used to store all incoming messages in a single file. The \texttt{BinaryFileListOutput} class generates a list of files. The decision if a new file is opened depends on the times-tamp of the message and a preset interval. One could store a whole day in a file, or only a burst of 10 minutes. In real-time operation it makes sense to open new files burst-wise. For this scenario  another option to open a new file exists, a new file is generated when  the ADCP doesn't send data for a specified period.
+
 
 %-------------------------------
 %\chapter{Testing}
