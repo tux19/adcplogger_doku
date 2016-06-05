@@ -4,8 +4,10 @@
 
 
 \begin{description}
-  \item[Authentication] 
-  \item[Authorization] Authorization is the decision whether an entity is allowed to perform a particular action or not, 
-       e.g. whether a user is allowed to attach to a network or not.
-  \item[Accounting]
+  \item[bin] Bins are the discreet values where the ADCP measures the flow. In this project a bin has the hight of 0.5 m.
+  \item[beam] An ADCP has a finite number of beams. Beams emit the waves used to measure the flow currents and directions. At least 3 beams have to be available to be able to measure the direction of the flow.
+  \item[ADCP ensemble] An ADCP ensemble contains all data of one measuring ping. The data is stored in a series of MATLAB matrices.
+  \item[ADCP frame] An ADCP frame is essentially an ensemble with a header at the beginning and a CRC checksum at the end. The ADCP sends out frames. The frame header and the checksum allow error detection.
+  \item[ADCP burst] A collection of a number ADCP frames measured continuously. In this project a burst contains 2048 frames collected over around 6-7 minutes.
+
 \end{description}
