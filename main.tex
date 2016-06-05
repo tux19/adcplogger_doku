@@ -13,11 +13,12 @@ The nature of the real time parsing problem itself directs the architectural dec
 % threaded steps with queues
 \begin{figure}[h]
 \centering
-      \includegraphics[width=0.8\textwidth]{threads}
+      \includegraphics[width=0.8\textwidth]{dfd}
         \caption{A DFD showing the data-flow through the threads.}
 \end{figure}
-Figure 3.1 shows a high level Data Flow Diagram (DFD) showing the, for now, three threads of the pipeline steps. The threads are connected over First-In-First-Out data structures. In order to follow the component based approach, the input thread should execute one, at runtime specified component from a set of input components. It was decided to implement three components, serial input, binary file input and binary file list input. The decision was based on use cases in previous projects containing an ADCP. The common scenarios there were real time serial input, the need to parse one file to look at it's content, or the need to reprocess a list of old raw data files. Therefore the these three cases formed the components to be implemented.\\ 
-The processing step was more complex to break into clear components. Each thread calls a function if it is started. It was decided to build a component \texttt{AdcpLogger} which contains the run method. In this method other components needed to parse the data-stream will be invoked and used. Figure 3.2 shows the components involved in the \texttt{AdcpLogger} component. 
+Figure 3.1 shows a high level Data Flow Diagram (DFD) showing the, for now, three threads of the pipeline steps modeled as circles. The threads are connected over First-In-First-Out data structures represented as datastore objects. In order to follow the component based approach, the input thread should execute one at runtime specified component from a set of input components. It was decided to implement three components, serial input, binary file input and binary file list input. The decision was based on use cases in previous projects containing an ADCP. The common scenarios there were real time serial input, the need to parse one file to look at it's content, or the need to reprocess a list of old raw data files. Therefore the these three cases formed the components to be implemented.\\ 
+At first the processing step had only one component which should parse and clean the incoming data, later a second component was introduced. The reason for the second component is described below.\\
+Each thread calls a function if it is started. It was decided to build a component \texttt{AdcpLogger} which contains the run method. In this method other, components needed to parse the data-stream will be used on the way. Figure 3.2 shows the components involved in the \texttt{AdcpLogger} component. 
 \begin{figure}[h]
 \centering
       \includegraphics[width=0.8\textwidth]{components}
@@ -25,7 +26,7 @@ The processing step was more complex to break into clear components. Each thread
 \end{figure}
 A key part is the parser, a small state-machine used to extract complete ensembles from another component, the sequence buffer. The sequence buffer was introduced as buffer mechanism on top of an incoming data source. It should allow all-or-nothing reads on the host and be able to find specified sequences as the starting sequence of each ensemble described in the related work section. The decision to use such a buffer was for instance the ability to decouple the ADCP parser component from the used input data source. It also moves the functionality of finding a sequence into the buffer and simplifies thus the components using this buffer. Another component is used for the MATLAB related parsing of the ensembles.\\ In the development process a request from General Acoustics e.K. regarding a current project in the Iraq where the repair of corrupt ADCP data was needed, opened the path for an additional processing component. It was implemented also as a thread function in the ADCP logger class but uses a new parser class \texttt{AdcpRepair} again a state machine to collect the data from the sequence buffer. Such repair algorithms are very fragile and have to scope with a lot of error possibilities. The goal was to try a data recovery with a reasonable amount of effort. It was decided to correct one maybe two byte errors in a MATLAB matrix, this results at around 10 allowed errors in one ensembles. A better recovery algorithm would need to make too much assumptions, and thus probably jeopardize the correctness of the data with false-correct values.\\
 The output components for the output thread were again decided based on older use cases. Either binary file output for one result file, e.g. to merge a month of burst data files into one file, or binary file list output, to generate a list of files based either on timestamps or when no data arrives whilst on real time operation. The output components are message based, where a block of binary data is combined with a time-stamp to a message. Thus it is possible to decouple the output from ADCP data structures and making it independent and usable for other sensor types, as long as the output is binary.\\
-Figure 3.3 shows all components of the decided architecture in a component diagram the threads may be viewed also as components and are drawn as dashed components. The connecting FIFO data structures were left out to simplify the figure and get their attention later on.\\ 
+Figure 3.3 shows all components of the decided architecture in a component diagram the threads may be viewed UML packets with dashed lines. The connecting FIFO data structures were left out to simplify the figure and get their attention later on. Dashed vertical lines signal a choice of components when the application is executed\\ 
 \begin{figure}[h]
 \centering
       \includegraphics[width=0.8\textwidth]{all_components}
@@ -36,7 +37,7 @@ In reflection on the requirements the resulting architecture is structured, deco
 The design of the data-structures used in the application should also follow the guidelines formed by the requirements. 
 \begin{figure}[h]
 \centering
-      \includegraphics[width=0.8\textwidth]{data structures}
+      \includegraphics[width=1\textwidth]{data_structures}
         \caption{A class diagram representing the implemented data structures}
 \end{figure}
 Figure 3.4 shows an overview of the used classes. In this figure, a distinction of the modules was done by dashed rectangles. Only one data structure uses inheritance the ADCP ensemble with its matrix classes, in the other cases it was simply not necessary! The degree of inheritance was tested in various scenarios from a complete flat hierarchy to the final version over three layers. The reason why inheritance was necessary in the first place, were the two different data-types used in the ADCP data matrices. The decision for the current final approach resulted out of better usability in working with base class pointers. It saves a lot of code lines if one is able to iterate over an array of base class pointers instead of writing the code ten or more times. This way it is also possible to instantiate a \texttt{AdcpEnsemble} without preallocated matrix classes, and add them only if needed. There were arguments against this approach, especially performance wise because the downcasts were expensive, as the development progressed it turned out that this was only a compiler setting. If the code was compiled for release, the compiler optimized as far as a concrete distinction between a high- or a low inheritance hierarchy was not detectable anymore.
@@ -66,11 +67,21 @@ This chapter gives a detailed insights on implementation specific aspects of the
 Section 2.2 in Related Work describes the data generated by an ADCP. It was shown that the payload of each ensemble is serialized in a MATLAB version 4 file format. This format is used by General Acoustics e.K. for other sensor types e.g. a sub-bottom profiler. The high portability to reuse the code and algorithms related to the MATLAB v.4 format predestines for a clean, independent and self contained code. To ensure the required independence the MATLAB component was implemented and tested before the other components and the main program.\\
 The implementation strongly followed the official MATLAB v.4. file structure documentation []. The structure defined there has a lot more possible data types and matrix types than used by the ADCP. As example, in a MATLAB v.4 matrix the data may be stored as a sparse matrix, but this feature is not used for ADCP ensembles. The unused features were prepared but not implemented as seen in figure 4.1.
 % prepared code snippet
-\begin{figure}[h]
-\centering
-      \includegraphics[width=0.8\textwidth]{unimpl}
-        \caption{Code snippet of not implemented logic.}
-\end{figure}
+\begin{lstlisting}[language=C++, caption=Code snippet of not implemented logic]
+        case NumericType::ntUInt16 : {
+            //TODO uint16_t var;
+        }
+        case NumericType::ntUInt8 : {
+            //TODO uint8_t var;
+        }
+    }
+    return std::move(vec);
+}
+std::string MatlabWriter::reportMatrix(MatlabMatrix *matrix){
+    //TODO
+}
+\end{lstlisting}
+
 The decision to skip the implementation of project unrelated parts helped to focus the programming efforts on other more complex parts of the project. The library is well structured and easily extendable, thus it will be a simple task to extend it if asked in forthcoming projects.
 % matlab structure
 \begin{figure}[h]
@@ -83,19 +94,61 @@ The structure of the component is presented in Figure 4.2. The \texttt{MatUtils:
 As presented in figure 3.6 a MATLAB matrix contains a \texttt{MatUtils::MatlabMatrixHeader}. The header contains five \texttt{uint32} integers specifying the rest of the Matrix and is implemented as a struct. The first integer, also called \texttt{M0PT}, is composed out of three other integers. The value is calculated as follows:
 $$M\cdot1000 + 0 \cdot 100 + P\cdot 10 + T$$
 M represents the float layout which specifies how the float is stored in bytes. Only little and big endian were considered for this project. P is the numerical type of the matrix content and T is the matrix type which holds if the matrix is either a full matrix, sparse matrix or a matrix containing text. All three values are implemented as enums, their implementation is shown in figure 4.3.
-\begin{figure}[h]
-\centering
-      \includegraphics[width=0.8\textwidth]{mlab_struct}
-        \caption{A code snippet showing the used enums and structs in the MATLAB header.}
-\end{figure}
+
+\begin{lstlisting}[language=C++, caption=A code snippet showing the used enums and structs in the MATLAB header.]
+enum class FloatLayout {  	// equals M of M0PT val
+    flIEEElittleendian,
+    flIEEEbigendian,
+    flVAXDfloat,
+    flVAXGfloat,
+    flCray };
+							// 0 of M0PT is always 0
+enum class NumericType { 	// equals P value of M0PT
+    ntFloat64,
+    ntFloat32,
+    ntInt32,
+    ntInt16,
+    ntUInt16,
+    ntUInt8 };
+
+enum class MatrixType {  	// equals T Value
+    mtFull,
+    mtText,
+    mtSparse};
+
+struct  MatlabMatrixHeader {// Fixed 20 byte Matrix header
+    int32_t M0PT;  			//  == FloatLayout * 1000 + NumericType * 10 + MatrixType
+    int32_t mrows;
+    int32_t ncols;
+    int32_t imagflag;   	//  1 if matrix has imaginary part
+    int32_t namelength; }; 	// 1 + name length
+\end{lstlisting}
+
 The next two integers in the header contain the number of rows and columns. Next follows a flag if the matrix has an imaginary part, which would double the amount of data used. The last integer of the Header contains the number of characters from the matrix name incremented by one to account for the string termination character.
 The \texttt{MatlabMatrix} class additionally contains a vector of \texttt{char}'s to store the matrix-name.\\
 The matrix data is stored in a templated \texttt{boost::variant} vector to allow a range of data types for the data. The fairly complicated templating (figure 4.4) needed to achieve this goal was taken from  a great answer at Stackoverflow [], this way the otherwise needed inheritance hierarchy was bypassed. 
-\begin{figure}[h]
-\centering
-      \includegraphics[width=0.8\textwidth]{mlab_templ}
-        \caption{A code snippet showing the templating to allow various types in a Boost variant.}
-\end{figure}
+\begin{lstlisting}[language=C++, caption=A code snippet showing the templating to allow various types in a Boost variant.]
+template<class...>struct types {};
+using matlab_types = types<int16_t, int32_t, boost::float32_t, boost::float64_t, uint8_t, uint16_t>;
+
+namespace details {
+    template<class types, template<class...>class target>
+    struct apply_types {};
+    template<class...Ts, template<class...>class target>
+    struct apply_types<types<Ts...>, target> {
+        using type = target<Ts...>;
+    };
+}
+template<class types, template<class...>class target>
+using apply_types = typename details::apply_types<types, target>::type;
+...
+// and used for a vector with variable types:
+...
+
+template<class...Ts>
+using data_t = boost::variant< std::vector<Ts>... >;
+apply_types<matlab_types, data_t> real;
+\end{lstlisting}
 %-------------------------------
 %-------------------------------
 \section{Sequence Buffer}
@@ -103,12 +156,10 @@ The idea of the sequence buffer has its origin at General Acoustics e.K. It serv
 The buffer has three properties that define how the buffer mechanism works. The buffer can be \texttt{hungry}, with this property on each \texttt{load()} operation it will load the maximal number of bytes that can be filled into the buffer. If the second property \texttt{angry} is \texttt{true} the buffer throws an exception when the \texttt{find()} method fails and the buffer is full. The third option \texttt{autodiscard} states if, in case of a  \texttt{find()} failure the buffer should drop bytes to prevent a deadlock.\\
 The set combination of these properties in conjunction with the preset buffer size should be considered carefully. If the byte sequence which should be found, is longer than the maximal buffer size the \texttt{find()} method will always report \texttt{false} and the application ends in a deadlock. The same thing can happen if the buffer is neither \texttt{angry} nor on \texttt{autodiscard}. In these cases the application has to prevent the deadlock.\\
 The maximum buffer size is set at instantiation, but extends itself based on the size of the requested \texttt{read()} and thus make sure that the buffer has enough space for a read.\\
-The implementation was done specifically for the moodycamel concurrent queue. Other sources can easily be added for different projects. The buffer could also be extended to support \texttt{readLine()} operations on \texttt{CRLF} delimitered data. The stubs are already prepared.\\
-Figure 4.5 presents the simple API as a class diagram:
-
-\begin{figure}[h]
+The implementation was done specifically for the moodycamel concurrent queue. Other sources can easily be added for different projects. The buffer could also be extended to support \texttt{readLine()} operations on \texttt{CRLF} delimitered data. The stubs are already prepared. Figure 4.5 presents the simple API as a class diagram:
+\begin{figure}[ht]
 \centering
-      \includegraphics[width=0.8\textwidth]{seqbuf}
+      \includegraphics[width=0.3\textwidth]{seqbuf}
         \caption{A class diagram of the sequence buffer.}
 \end{figure}
 
@@ -117,36 +168,59 @@ Figure 4.5 presents the simple API as a class diagram:
 \section{ADCP Logger}
 The heart of this software project was the implementation of the ADCP logger application. It integrates the separately developed components and forms the main program. This section shows the result of the implementation, explaining the architecture and specific technical specialties in a detailed top down approach.\\
 As specified in the design decisions, the architecture was implemented in a pipelined input-processing-output way. The program allows the execution of different components for each pipeline step. A configuration file is used to tell the program which component should be instantiated. The Boost Program Options library was used to parse the configuration file and set all required parameters, Figure 4.1 shows an example of a configuration file. It conveniently allows to check for invalid parameters and produces nicely formatted help output.
+\begin{lstlisting}[language={Ini}, caption=A Snippet of a configuration file for the ADCP logger application.]
+                                        #       CONFIGURATION FILE      #
+                                        #               for             #
+                                        #          ADCP Logger          #
+                                        #              v0.9             #
+                                        #-------------------------------#
+# Possible Input drivers:
+#           - serial: serial input
+#           - file: prozesses a single file
+#           - filelist: processes a continoues list of files in folder
+inputmode=filelist
 
-\begin{figure}[h]
-\centering
-      \includegraphics[width=0.7\textwidth]{config}
-        \caption{A Snippet of a configuration file for the ADCP logger application}
-\end{figure}
+# Possible Process Components:
+#           - repair: trys to recover as much as possible
+#           - clean: removes all unnecessary data
+processmode=clean
+# Possible Output drivers:
+#           - file: prozesses a single file
+#           - filelist: processes a continoues list of files in folder
+outputmode=file
+# Input path to a file
+inputpath=C:\TEMP\output\ADCP00000020.bin
+# Output path to a directory
+outputpath=C:\TEMP\output
+[input]
+com=COM7
+baud=19200
+\end{lstlisting}
 
-Each pipeline step is implemented as a thread. Figure 4.2 shows a data-flow model where the circles represent the threads. 
-
-\begin{figure}[h]
-\centering
-      \includegraphics[width=0.95\textwidth]{dfd}
-        \caption{A high-level Data-Flow-Diagram }
-\end{figure}
-
- All threads are connected over moodycamels lock-free concurrent queues [], in the figure represented as data store objects. The queues are set up as Single-Producer-Single-Consumer (SPSC) queues and use explicit producer and consumer tokens to maximize performance. Figure 4.3 shows how the token is used to dequeue elements from an input queue.
-
-\begin{figure}[h]	
-\centering
-      \includegraphics[width=0.95\textwidth]{ct}
-        \caption{Code snippet showing the use of consumer tokens}
-\end{figure}
+Each pipeline step is implemented as a thread. All threads are connected over moodycamels lock-free concurrent queues []. The queues are set up as Single-Producer-Single-Consumer (SPSC) queues and use explicit producer and consumer tokens to maximize performance. Figure 4.3 shows how the token is used to dequeue elements from an input queue.
+\begin{lstlisting}[language=C++, caption=Code snippet showing the use of consumer tokens.]
+moodycamel::ConsumerToken ct(istream);
+while(!exit){
+    AdcpEnsemble ensemble;
+    AdcpFrame frame;
+        if(istream.try_dequeue(ct,ensemble)) {
+            frame = converter.ensembleToFrame(&ensemble);
+\end{lstlisting}
 
 The threads run concurrently until the end of the execution. Each thread exits if its predecessor is finished. If this is the case, the thread synchronizes with its predecessor over an atomic boolean value. It is important that the memory state of the predecessor gets propagated to the thread receiving the exit signal. The implementation of the memory propagation was done with the new C++11 \texttt{std::atomic\char`_thread\char`_fence} memory barriers. This step was needed that the thread determined to exit, can reliably see if it's input queue is empty. The critical function here is the \texttt{moodycamel::size\char`_approx()} function. It only returns the correct size of the queue if the memory effects of the enqueue operations in the predecessor threads have propagated. With the use of the described memory fences this state can be reliably provided. How this was implemented is shown in figure 4.4
-
-\begin{figure}[h]
-\centering
-      \includegraphics[width=0.95\textwidth]{memory_barrier}
-        \caption{Code snippet highlighting the memory barriers}
-\end{figure}
+\begin{lstlisting}[language=C++, caption=Code snippet highlighting the memory barriers.]
+// previous thread is finished, and queue is empty, then exit thread
+if((*exit1).load(std::memory_order_relaxed)){
+    atomic_thread_fence(std::memory_order_acquire);
+    // make sure the memory effects have propagated before checking the size
+    if(istream.size_approx() <=0 ){
+        //set memory fence for next thread
+        atomic_thread_fence(std::memory_order_release);
+        (*exit2).store(true, std::memory_order_relaxed);
+        exit = true;
+    }
+}
+\end{lstlisting}
 
 This architecture would allow to insert either more components to select at each step or extend the model with a reasonable number of new steps e.g. a second processing step. The system of component selection and thread termination stays the same.\\
 The next three sections look at the currently implemented steps of the processing pipeline. A class diagram is presented for each step. The diagrams omit getter and setter methods as well as constructors to simplify the diagram. If a component was already shown before, it is only added as a simplified package to save space.
@@ -195,15 +269,55 @@ The task turned out to be much more complicated than thought at first. A lot of 
 
 In the \texttt{runParseRepair()} method the received frames are processed in the hope to recover as much as possible. Probably the most important correction happens at the moment where the byte stream is converted to int's or floats. If a byte is missing the generated number is semantically wrong or even not considered as a number. Figure 4.3 shows the code snippet that tries to find where the byte is missing, and searches for the next possible healthy value.\\
 After recovering as much as possible, all data like the time-stamp or the ensemble number are tested again for plausibility, if everything seems fine the frame is converted to a message and enqueued ready for the output thread.
-\begin{figure}[h]
-\centering
-      \includegraphics[width=0.95\textwidth]{repair_byte}
-        \caption{Code snippet from the repair function, it finds missing bytes}
-\end{figure}
+\begin{lstlisting}[language=C++, caption=Code snippet from the repair function, it finds missing bytes.]
+// position of next matrix
+auto posE4 = std::search(payloadP->begin(), payloadP->end(), seq_e4.begin(), seq_e4.end());
+// position is reasonable
+if(posE4 != payloadP->end() && posE3 < posE4 && posE4 < posE8){
+    size_t expectedSize = bins*beans* sizeof(boost::float32_t);
+    size_t realSize = (posE4 - 5 * sizeof(int32_t)) - posE3;
+    double difference = expectedSize-realSize;
+
+    // only at most maxBytesLost bytes lost - to many bytes are not considered
+    if(difference >= 0  && difference <= maxBytesLost){
+        boost::float32_t res;
+        int offset = 0;
+        for(int i = 0; i < bins * beans; i++) {
+            auto vecbuf = std::vector<unsigned char >(posE3 + offset + i * 4, posE3 + offset + i * 4 + 4);
+            res = ByteUtils::byteVecToFloat32(vecbuf, ByteUtils::Endianness::LittleEndian);
+            //bad - check for nan
+            if(res < -15.0f || res > 15.0f || (res > 0.00f - epsilon && res < 0.00f + epsilon) || res != res) {
+                e3.push_back(-999.0f);
+                if( i < bins*beans -1){
+                    i++;
+                    //try to find next healty value
+                    for(int j = -3; j <= 0; j++){
+                        vecbuf = std::vector<unsigned char >(posE3 + offset + j + i * 4, posE3 + offset + j + i * 4 + 4);
+                        res = ByteUtils::byteVecToFloat32(vecbuf, ByteUtils::Endianness::LittleEndian);
+                        if((res > -15.0 || res < 15.0) && (res < 0.00f - epsilon || res > 0.00f + epsilon)){
+                            offset += j;
+                            e3.push_back(res);
+                            break;
+                        }else{
+                            if(j == 0){
+                                e3.push_back(-999.0f);
+                            }
+                        }
+                    }
+                }
+
+            }else{ //good
+                e3.push_back(res);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
 This Algorithm only works reliable if the number of missing bytes is not too low. It also has room of improvement but it was not a core requirement of this project, so further development would have meant unnecessary effort. The result can be seen as `good-enough'. Originally only 20 out of 2048 ensembles were healthy, with this function the number could be raised to over 800 which was enough for further wave analysis.
 
 \subsection{Output Step}
-The output step 
+The output step \cite{adcp}
 
 %-------------------------------
 %\chapter{Testing}

@@ -4,18 +4,49 @@ This chapter presents the related work on which this project was built on. The b
 \section{General Acoustics e.K.}
 Due to previous projects with ADCP's a lot of knowledge about the technology was already available from General Acoustics e.K. A look at the algorithms of the current ADCP parser as well as other libraries used in this context gave a good introduction into the problem and helped a lot in architectural decisions. The libraries were developed by Jan Schirrmacher in Delphi and thus only available for Windows. Figure 2.1 shows a code snippet in Delphi from the ADCP parser function currently used in various applications. Without this help the implementation would probably not have been possible in the time-frame of this project.
 %delphicode 
-\begin{figure}[b]
-\centering
-      \includegraphics[width=0.8\textwidth]{parser}
-        \caption{A part from the implementation of the ADCP parser from Jan Schirrmacher}
-\end{figure}
+\begin{lstlisting}[language=Delphi, caption=A part from the implementation of the ADCP parser from Jan Schirrmacher]
+function TParser.Scan :boolean;
+var
+  MustCRC :UInt32;
+  Index :integer;
+
+  procedure MsgOut(const Msg :string; Resync :boolean = true);
+  begin
+    if Assigned(FOnParseMessage) then
+      FOnParseMessage(self, Msg, Resync);
+    if Resync then
+      FStep := psStartSequence;
+  end;
+
+begin
+  FEOF := false;
+  result := false;
+  try
+    case FStep of
+    psStartSequence:
+      begin
+        FEnsembleComplete := false;
+        if FQueue.Find(TEnsemble.STARTSEQUENCEBYTES, sizeof(TEnsemble.STARTSEQUENCEBYTES), Index) then begin
+          // Position im Host-Stream rekonstruieren, damit Dateiposition sich gemerkt werden kann
+          FEnsemblePosition := FQueue.HostPosition - FQueue.Available + Index;
+          FQueue.Drop(Index + sizeof(TEnsemble.STARTSEQUENCEBYTES));
+          FStep := psHeader;
+          if Index>0 then
+            MsgOut(Format(SErrSyncFailedFmt, [Index]), false);
+        end else begin
+          FEOF := true;
+          if FQueue.Available=FQueue.Capacity then begin
+            MsgOut(Format(SErrSyncFailedFmt, [FQueue.Available]), false);
+          end;
+        end;
+\end{lstlisting}
 
 \section{Acoustic Doppler Current Profiler}
 An Acoustic Doppler Current Profiler (ADCP) is a hydro-acoustic instrument or sonar device that is used to measure water velocities in discrete layers over a certain range that is defined by the acoustic frequency. Essentially, the ADCP emits a sound signal of a specific frequency and measures the return frequency that is received from backscatter via particles in the water column [1].\\
 The reference ADCP used for this project is produced by Rowe Technologies [2]. It has 4 horizontal pistons and one vertical piston, also known as beams. Beams emit the waves used to measure the flow currents and directions. Figure 2.2 shows a picture of the used ADCP.\\
 \begin{figure}[h]
 \centering
-      \includegraphics[width=0.8\textwidth]{adcp}
+      \includegraphics[width=0.6\textwidth]{adcp}
         \caption{A picture of the ADCP referenced in this project. }
 \end{figure}
 The used ADCP is configured to measure a maximum of 15 meter distance divided into 30 discreet bins of 0.5 m. The four horizontal beams are used to measure the flow currents and directions, internal signal processing is used to calculate the correct earth coordinates (East, North, Up) based on the ADCP position and heading, pitch and roll angles. The single beam is used to measure the water level.\\
@@ -33,7 +64,7 @@ with CRC seed of value 0.
 If the 32 byte header is removed from each ensemble, Matlab is able to read in the ensembles.
 \begin{figure}[h]
 \centering
-      \includegraphics[width=0.8\textwidth]{hexdump}
+      \includegraphics[width=0.7\textwidth]{hexdump}
         \caption{A hex-capture of the first few bytes from an ensemble.}
 \end{figure}
 
@@ -68,11 +99,11 @@ The matrices that are used for further processing are:
 \section{Libraries}
 For the implementation of this project, a number of external libraries were used to simply the development process. The decision for or against various libraries is illustrated in Chapter 3, at this point, only the libraries used in the implementation are described.
 \subsection{Boost}
-Boost is a collection of libraries for the C++ programming language. It contains over eighty individual and portable libraries to support a wide range of use cases.Figure 2.4 presents a list of the core libraries contained in boost.
+Boost is a collection of libraries for the C++ programming language. It contains over eighty individual and portable libraries to support a wide range of use cases. Figure 2.4 presents a list of the libraries contained in boost.
 \begin{figure}[h]
 \centering
       \includegraphics[width=0.8\textwidth]{boost}
-        \caption{A list of the most important Boost libraries.}
+        \caption{A list of the Boost libraries.}
 \end{figure}
 The libraries are licensed under Boost Software License [] which are designed to be used for both free and proprietary software. A lot of boost libraries get accepted for new C++ standards, the latest big incorporation was when the C++11 standard was introduced. Most Boost libraries are header only consisting in-line functionality and templates some libraries have to be compiled separately.\\
 In the development of this software project, mainly the following boost libraries were used:
@@ -86,16 +117,12 @@ In the development of this software project, mainly the following boost librarie
 \subsection{Moodycamel Concurrent Queue}
 The Moodycamel concurrent queue is a industrial strength lock-free queue for C++ created by Carmen Desrochers. Its Features are a unbeaten fast performance, a single header implementation and full thread safety. It is developed completely in C++11 and uses move semantics wherever possible. The memory can be preallocated once or dynamically as needed. The queue is fully portable, as it relays only on standard C++11 primitives. It supports very fast bulk operations [].\\
 To proof the correctness of the chorus of praise the author made performance tests where his queue beat various concurrent queues in all aspects. The suffering candidates were Intel's TBB queue [], Boost's lock-free queue and the STL queue with mutexes. The results can be found under \url{http://moodycamel.com/blog/2014/a-fast-
-general-purpose-lock-free-queue-for-c++#benchmarks}
-
-The following figure 2.5 lists the API of the queue in pseudo-code:
-
+general-purpose-lock-free-queue-for-c++#benchmarks} The figure 2.5 lists the API of the queue in pseudo-code.
 \begin{figure}[h]
 \centering
-      \includegraphics[width=0.8\textwidth]{moody}
+      \includegraphics[width=0.6\textwidth]{moody}
         \caption{The API of the \texttt{moodycamel::concurrentqueue}}
 \end{figure}
-
 The only troublesome method is \texttt{size\_approx()} because it cannot be determined for a consuming thread if the queue is complete empty or if some enqueue operations did not propagate their memory-state to the asking thread. The solution proposed is the use of memory barriers. How they were implemented is shown in Chapter 4.
 \subsection{Serial Port Wrapper}
 The Serial-Port class was developed from Terraneo Federico []. It is a wrapper around the Boost.Asio serial port components and simplifies the work with serial ports. 
