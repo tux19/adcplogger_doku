@@ -2,7 +2,7 @@
 This chapter presents the related work on which this project was built on. The basis was the work done at General Acoustics e.K. particularly from Dipl. Ing. Jan Schirrmacher in previous projects containing an ADCP. Afterwards an in-depth introduction on the used ADCP from Rowe Technologies, Inc. will provide the needed background information in this field. Finally the used external libraries will be presented to give background information needed further in the report.
 
 \section{General Acoustics e.K.}
-Due to previous projects with ADCP's a lot of knowledge about the technology was already available from General Acoustics e.K. A look at the algorithms of the current ADCP parser as well as other libraries used in this context gave a good introduction into the problem and helped a lot in architectural decisions. The libraries were developed by Jan Schirrmacher in Delphi and thus only available for Windows. Figure 2.1 shows a code snippet in Delphi from the ADCP parser function currently used in various applications. Without this help the implementation would probably not have been possible in the time-frame of this project.
+Due to previous projects with ADCP's a lot of knowledge about the technology was already available from General Acoustics e.K. A look at the algorithms of the current ADCP parser as well as other libraries used in this context gave a good introduction into the problem and helped a lot in architectural decisions. The libraries were developed by Jan Schirrmacher in Delphi and thus only available for Windows. Listing 2.1 shows a code snippet in Delphi from the ADCP parser function currently used in various applications. Without this help the implementation would probably not have been possible in the time-frame of this project.
 %delphicode 
 \begin{lstlisting}[language=Delphi, caption=A part from the implementation of the ADCP parser from Jan Schirrmacher]
 function TParser.Scan :boolean;
@@ -42,8 +42,8 @@ begin
 \end{lstlisting}
 
 \section{Acoustic Doppler Current Profiler}
-An Acoustic Doppler Current Profiler (ADCP) is a hydro-acoustic instrument or sonar device that is used to measure water velocities in discrete layers over a certain range that is defined by the acoustic frequency. Essentially, the ADCP emits a sound signal of a specific frequency and measures the return frequency that is received from backscatter via particles in the water column [1].\\
-The reference ADCP used for this project is produced by Rowe Technologies [2]. It has 4 horizontal pistons and one vertical piston, also known as beams. Beams emit the waves used to measure the flow currents and directions. Figure 2.2 shows a picture of the used ADCP.\\
+An Acoustic Doppler Current Profiler (ADCP) is a hydro-acoustic instrument or sonar device that is used to measure water velocities in discrete layers over a certain range that is defined by the acoustic frequency. Essentially, the ADCP emits a sound signal of a specific frequency and measures the return frequency that is received from backscatter via particles in the water column \cite{adcp_def}.\\
+The reference ADCP used for this project is produced by Rowe Technologies Inc. \cite{rowe}. It has 4 horizontal pistons and one vertical piston, also known as beams. Beams emit the waves used to measure the flow currents and directions. Figure 2.1 shows a picture of the used ADCP.\\
 \begin{figure}[h]
 \centering
       \includegraphics[width=0.6\textwidth]{adcp}
@@ -105,19 +105,18 @@ Boost is a collection of libraries for the C++ programming language. It contains
       \includegraphics[width=0.8\textwidth]{boost}
         \caption{A list of the Boost libraries.}
 \end{figure}
-The libraries are licensed under Boost Software License [] which are designed to be used for both free and proprietary software. A lot of boost libraries get accepted for new C++ standards, the latest big incorporation was when the C++11 standard was introduced. Most Boost libraries are header only consisting in-line functionality and templates some libraries have to be compiled separately.\\
+The libraries are licensed under Boost Software License \cite{boostliz} which are designed to be used for both free and proprietary software. A lot of boost libraries get accepted for new C++ standards, the latest big incorporation was when the C++11 standard was introduced. Most Boost libraries are header only consisting in-line functionality and templates some libraries have to be compiled separately.\\
 In the development of this software project, mainly the following boost libraries were used:
 \begin{itemize}
-\item \texttt{boost::asio} - Boost.Asio is a cross-platform C++ library for network and low-level I/O programming that provides developers with a consistent asynchronous model using a modern C++ approach [http://www.boost.org/doc/libs/1\_61\_0/doc/html/boost\_asio.html]. In this project only the serial port functionality was used.
-\item \texttt{boost::filesystem} - The Boost.Filesystem library provides platform independent facilities to manipulate files and directories, and the paths that identify them [http://www.boost.org/doc/libs/1\_61\_0/libs/filesystem/doc/index.htm].
-\item \texttt{boost::programoptions} - Boost.Program\_options allows program developers to obtain program options, that is (name, value) pairs from the user, via conventional methods such as command line and config files [http://www.boost.org/doc/libs/1\_61\_0/doc/html/program\_options.html]. 
-\item \texttt{boost::test} - Boost.Test is a library with support for simple program testing, full unit testing, and for program execution monitoring[http://www.boost.org/doc/libs/1\_61\_0/libs/test/doc/html/boost\_test/intro.html].
-\item \texttt{boost::thread} - Portable C++ multi-threading implemented in C++11 and C++14. This library  enables the use of multiple threads of execution with shared data in portable C++ code. It provides classes and functions for managing the threads themselves, along with others for synchronizing data between the threads or providing separate copies of data specific to individual threads. [http://www.boost.org/doc/libs/1\_61\_0/doc/html/thread.html]
+\item \texttt{boost::asio} - Boost.Asio is a cross-platform C++ library for network and low-level I/O programming that provides developers with a consistent asynchronous model using a modern C++ approach \cite{boost_asio}. In this project only the serial port functionality was used.
+\item \texttt{boost::filesystem} - The Boost.Filesystem library provides platform independent facilities to manipulate files and directories, and the paths that identify them \cite{boost_files}.
+\item \texttt{boost::programoptions} - Boost.Program\_options allows program developers to obtain program options, that is (name, value) pairs from the user, via conventional methods such as command line and config files \cite{boost_po}. 
+\item \texttt{boost::test} - Boost.Test is a library with support for simple program testing, full unit testing, and for program execution monitoring \cite{boost_test}.
+\item \texttt{boost::thread} - Portable C++ multi-threading implemented in C++11 and C++14. This library  enables the use of multiple threads of execution with shared data in portable C++ code. It provides classes and functions for managing the threads themselves, along with others for synchronizing data between the threads or providing separate copies of data specific to individual threads \cite{boost_thread}. 
 \end{itemize}
 \subsection{Moodycamel Concurrent Queue}
-The Moodycamel concurrent queue is a industrial strength lock-free queue for C++ created by Carmen Desrochers. Its Features are a unbeaten fast performance, a single header implementation and full thread safety. It is developed completely in C++11 and uses move semantics wherever possible. The memory can be preallocated once or dynamically as needed. The queue is fully portable, as it relays only on standard C++11 primitives. It supports very fast bulk operations [].\\
-To proof the correctness of the chorus of praise the author made performance tests where his queue beat various concurrent queues in all aspects. The suffering candidates were Intel's TBB queue [], Boost's lock-free queue and the STL queue with mutexes. The results can be found under \url{http://moodycamel.com/blog/2014/a-fast-
-general-purpose-lock-free-queue-for-c++#benchmarks} The figure 2.5 lists the API of the queue in pseudo-code.
+The Moodycamel concurrent queue is a industrial strength lock-free queue for C++ created by Carmen Desrochers. Its Features are a unbeaten fast performance, a single header implementation and full thread safety. It is developed completely in C++11 and uses move semantics wherever possible. The memory can be preallocated once or dynamically as needed. The queue is fully portable, as it relays only on standard C++11 primitives. It supports very fast bulk operations \cite{moody}.\\
+To proof the correctness of the chorus of praise the author made performance tests where his queue beat various concurrent queues in all aspects. The suffering candidates were Intel's TBB queue \cite{intel_tbb}, Boost's lock-free queue and the STL queue with mutexes. The results can be found under \cite{benchmark}. The figure 2.5 lists the API of the queue in pseudo-code.
 \begin{figure}[h]
 \centering
       \includegraphics[width=0.6\textwidth]{moody}
@@ -125,4 +124,4 @@ general-purpose-lock-free-queue-for-c++#benchmarks} The figure 2.5 lists the API
 \end{figure}
 The only troublesome method is \texttt{size\_approx()} because it cannot be determined for a consuming thread if the queue is complete empty or if some enqueue operations did not propagate their memory-state to the asking thread. The solution proposed is the use of memory barriers. How they were implemented is shown in Chapter 4.
 \subsection{Serial Port Wrapper}
-The Serial-Port class was developed from Terraneo Federico []. It is a wrapper around the Boost.Asio serial port components and simplifies the work with serial ports. 
+The Serial-Port class was developed from Terraneo Federico \cite{serport}. It is a wrapper around the Boost.Asio serial port components and simplifies the work with serial ports. 
