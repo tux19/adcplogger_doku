@@ -1,13 +1,83 @@
 \chapter{Evaluation}
-This chapter will discuss the result of the implementation compared to the requirements from General Acoustics e.K. The functionality will be evaluated with respect to correctness and performance. Additionally the taken implementation approaches will be reevaluated and classified based on the experiences met during the development.
+% This chapter will discuss the result of the implementation compared to the requirements from General Acoustics e.K. The functionality will be evaluated with respect to correctness and performance. Additionally the taken implementation approaches will be reevaluated and classified based on the experiences met during the development.
 
-The result of this software project is on one side a highly optimized, scalable and multi-functional ADCP parsing application. On the other side the created source code is highly structured and lots of components are implemented completely independent and ready to use for other projects. The implementation has been done with modern C++11 in a completely portable way as requested. It was not necessary to change a single line of code when compiling on Linux for the first time. The introduced external dependencies were limited to the Boost libraries and a lock-free queue that uses only C++ primitives.\\
-The functionality of the application is as required. Real-time parsing as well as batch-processing of old raw files is implemented and works error-free. The repair functionality even extends the planned scope. The application can be parametrized depending on the available hardware and use-case.\\
-The architecture is simple but variable enough to add functionality either by adding more components for each step, or by introducing new steps in form of additional threads. As described in the requirements the development of a framework around the components and realize a persistence of the components was not the target. For the scope of this project a dynamic selection of the components based on the input parameters with the ability to easily add functionality is sufficient.
+% The result of this software project is on one side a highly optimized, scalable and multi-functional ADCP parsing application. On the other side the created source code is highly structured and lots of components are implemented completely independent and ready to use for other projects. The implementation has been done with modern C++11 in a completely portable way as requested. It was not necessary to change a single line of code when compiling on Linux for the first time. The introduced external dependencies were limited to the Boost libraries and a lock-free queue that uses only C++ primitives.\\
+% The functionality of the application is as required. Real-time parsing as well as batch-processing of old raw files is implemented and works error-free. The repair functionality even extends the planned scope. The application can be parametrized depending on the available hardware and use-case.\\
+% The architecture is simple but variable enough to add functionality either by adding more components for each step, or by introducing new steps in form of additional threads. As described in the requirements the development of a framework around the components and realize a persistence of the components was not the target. For the scope of this project a dynamic selection of the components based on the input parameters with the ability to easily add functionality is sufficient.
 
-The performance requirements were not  strictly predefined. Implicitly they were given through the functionality requirements. The real-time operation, as well as post-processing of a big amount of old data should be possible in reasonable time. These requirements are satisfied by far. On a actual desktop computer with a fast SSD the application parses 180 bursts in around 30 seconds which results in around 166 ms per burst. This performance is really good!. The memory used never exceeds 28 megabytes. On the low-power data-logger the performance is slower, the CPU cannot keep up. For real-time operation the performance is by far fast enough, in 40 seconds the logger is capable to process five bursts, in real-time one burst would arrive every 10 minutes. The performance could probably be optimized in dropping the well-structured object oriented approach and working more directly with memory, bit it would be a high price to pay. One would lose the flexibility of easily adding new functionality, and the whole component based approach.
+% The performance requirements were not  strictly predefined. Implicitly they were given through the functionality requirements. The real-time operation, as well as post-processing of a big amount of old data should be possible in reasonable time. These requirements are satisfied by far. On a actual desktop computer with a fast SSD the application parses 180 bursts in around 30 seconds which results in around 166 ms per burst. This performance is really good!. The memory used never exceeds 28 megabytes. On the low-power data-logger the performance is slower, the CPU cannot keep up. For real-time operation the performance is by far fast enough, in 40 seconds the logger is capable to process five bursts, in real-time one burst would arrive every 10 minutes. The performance could probably be optimized in dropping the well-structured object oriented approach and working more directly with memory, bit it would be a high price to pay. One would lose the flexibility of easily adding new functionality, and the whole component based approach.
 
-In recapitulation of the chosen threaded architecture needs to be said that multithreaded development can be really painful. Debugging this software sometimes has cost countless hours to find segmentation faults, memory leaks or uncatched exceptions. The available toolset to debug these kind of application was small. The tools were either for Microsoft's MSVC compiler or only available on Linux. For upcoming projects it would be better to develop on either one of the platforms mentioned. At least a good heap profiler should be available.
+% In recapitulation of the chosen threaded architecture needs to be said that multithreaded development can be really painful. Debugging this software sometimes has cost countless hours to find segmentation faults, memory leaks or uncatched exceptions. The available toolset to debug these kind of application was small. The tools were either for Microsoft's MSVC compiler or only available on Linux. For upcoming projects it would be better to develop on either one of the platforms mentioned. At least a good heap profiler should be available.
 
-That said, the application with its structured and decoupled code-base in conjunction with the background information delivered in this report results in a complete package. The application is ready for productive operation. The code is ready to be used in upcoming projects, be it only through adding new functionality or completely redesigning the frame around the components. And at last the report and the documented source code delivers enough background information and overview over the application for other developers to understand the problem and start working on it for further projects.  
+% That said, the application with its structured and decoupled code-base in conjunction with the background information delivered in this report results in a complete package. The application is ready for productive operation. The code is ready to be used in upcoming projects, be it only through adding new functionality or completely redesigning the frame around the components. And at last the report and the documented source code delivers enough background information and overview over the application for other developers to understand the problem and start working on it for further projects.  
 
+This chapter will evaluate the results of the implementation compared to the requirements from General Acoustics e.K. in Section 5.1. Later on in Section 5.2 the performance and scalability of the implemented solution will be assessed in terms of execution time, memory consumption, and power consumption. Finally in Section 5.3 the limitations of the developed solution will be presented, and opportunities for future improvements presented.
+
+\section{Software Project Results}
+The goal of this software project was the design and the implementation of a modular ADCP parser as stated in Section 1.1. This software project was done in cooperation with General Acoustics e.K. and had to follow their requirements described in Section 3.1. The implemented solution was compared to these requirements and the results were presented in Table 5.1.
+
+\begin{tabular}{|l|l|}
+  \hline
+  	\textbf{Requirement R1} & The software should be able to parse real time ADCP data on a low-power data logger, clean it by removing unused information and thus enable the possibility of logging longer time periods due to the reduced size.\\ \hline
+  	\textbf{Result} & Fully completed and tested with virtual serial ports and high Baud rates (460800 Bd) and data throughput on a high performance Windows system, as well on a low-power ARM7 BananaPro with a real RS232 serial port and hardware restricted 115200Bd. The test setup is further described in Section 5.2.1.\\
+  \hline
+  \hline
+  	\textbf{Requirement R2} & The possibility of processing old raw data files with focus on speed rater than efficiency.\\ \hline
+  	\textbf{Result} & Fully completed, and tested with various old data files.\\
+  \hline
+  \hline
+  	\textbf{Requirement R3} & The application should scale according to the available hardware.\\ \hline
+  	\textbf{Result} & Completed through a threaded approach.\\
+  \hline
+  \hline
+  	\textbf{Requirement R4} & The software should be portable. \\ \hline
+  	\textbf{Result} & Completed, the application was written in C++11 with the help of Boost libraries, and is completely platform independent.\\
+  \hline
+  \hline
+  	\textbf{Requirement R5} & Save electricity to go easy on the battery if operated by one.\\ \hline
+  	\textbf{Result} & Completed, the use of the low-level programming language C++ resulted in a high performance application that uses as little as possible processing time in real time parsing. \\
+  \hline
+  \hline
+  	\textbf{Requirement R6} & The application should allow additional processing steps apart from the parsing.\\ \hline
+  	\textbf{Result} & Completed, the threaded component based approach from Section 3.2 fulfills this requirement. An additional requirement from General Acoustics e.K. was also implemented.\\
+  \hline
+  \hline
+  	\textbf{Requirement R7} & The architecture should allow other sensor types without having to change sensor unrelated code.\\ \hline
+  	\textbf{Result} & Completed, it would be possible to switch all ADCP related code with components from another sensor, and the application would work in the same manner.\\
+  \hline
+  \hline
+  	\textbf{Requirement R8} &  The software should be implemented in a well structured component based approach.\\ \hline
+  	\textbf{Result} & Completed \\
+  \hline
+  \hline
+  	\textbf{Requirement R9} & The components should be decoupled as much as possible.\\ \hline
+  	\textbf{Result} & Completed \\
+  \hline
+  \hline
+  	\textbf{Requirement R10} & Components with no dependency to the ADCP context should be implemented as completely independent components\\ \hline
+  	\textbf{Result} & Completed, MATLAB component \texttt{MatlabUtils}, sequence buffer \texttt{SequenceBuffer}, and binary input and output\texttt{BinaryIO} are implemented completely independent.\\
+  \hline
+\end{tabular}
+
+In addition to the implementation specific requirements, the code should also be properly documented to satisfy the expectations of General Acoustics e.K., particularly Jan Schirrmacher as he has to work with the solution in the future. The documentation was completed and signed off by Jan Schirrmacher.\\
+The Correctness of the software was tested through intensive parsing of real ADCP data in various modes and compare the results with results generated from a already tested parsing software developed by General Acoustics e.K. on Windows. To test the behavior on predefined error cases, a simple testing software was constructed that generates bursts of ADCP data with or without errors, and outputs them to a serial port. The source code of this testing application was included in Appendix B. With this application the behavior on missing byte errors can be understood. Such errors happen often when the serial connection from the ADCP to the logger is bad, and was in recent projects the biggest point of failure for corrupted ADCP data.\\
+The application reacted as expected, in the cleaning mode, it only considered frames that were completely intact and ignored frames with failures. If the application was run in repair mode, it tried to correct errors and returned frames that could be repaired.\\
+
+\subsection{Comparison to Similar Solutions}
+The software developed in this software project can be seen as very exotic. Outside from the field where General Acoustics e.K. is active, ADCP's are rarely known, and according software not existent. ADCP distributors either include the parsing and wave processing in the hardware, or distribute proprietary software with the ADCP. The producer of the reference ADCP used in this project gives access to the source code of its ADCP configuration and analyzing software written in for Windows in C# \cite. This software can be used to look at, and store ADCP data, but has huge performance issues and can hardly be compared to the software developed in this software project. It was also meant to be used for the configuration of the ADCP and not for the data processing.
+
+Other possibilities where the result of the software project could be compared against, were applications produced by General Acoustics e.K.. The problem here was, that the ADCP related algorithms were always included in other bigger graphical applications and, thus, not suitable for direct comparison. One software can parse ADCP data and returns a human readable MATLAB ready text file with the parsed matrix data. Because the application writes a file, and at the same time outputs information about the data on the display, it was massively slower than a command line application like the software implemented in this software project.
+
+The software as it was implemented stands alone and can not really be compared to anything existing yet. 
+
+\section{Performance and Scalability}
+In this section, the performance of the implemented solution as well as its scalability will be described. First the setup where the tests were executed will be presented, then the assessment in terms of performance, memory consumption, and power consumption will be evaluated.
+\subsection{Setup}
+The tests were done on two platforms, one for high speed data crunching where the fastest execution speed had highest importance, the other for low-power real-time processing, with an eye on power consumption and memory usage.
+
+For the high performance tests, a Surface Book wit Intel's i7 processor was used \cite. It has a very fast SSD and runs Windows 10 \cite.
+\subsection{Performance}
+\subsection{Memory Consumption}
+\subsection{Power Consumption}
+
+\section{Limitations}
