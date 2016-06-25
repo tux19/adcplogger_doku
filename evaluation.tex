@@ -15,14 +15,56 @@ This chapter will evaluate the results of the implementation compared to the req
 
 
 \section{Performance and Scalability}
-In this section, the performance of the implemented solution as well as its scalability will be tested and evaluated. First, the setup on which the tests were executed will be presented, then the assessment in terms of performance, memory consumption, and power consumption will be evaluated.
+In this section, the performance of the implemented solution as well as its scalability will be tested and evaluated. First, the setup on which the tests were executed will be presented, then the assessment in terms of performance, memory consumption, and power consumption will be discussed. 
 \subsection{Setup}
-The tests were done on two platforms, one for high speed data crunching where the fastest execution speed had highest importance, the other for low-power real-time processing, with an eye on power consumption and memory usage.
+The measurements of the developed software were executed on three different computing stations. Two high performance devices were used to test different software configurations and acquire execution speed results while post processing old ADCP data. To test the real-time parsing of ADCP data with energy consumption in mind, a Linux driven low-power device was used.
 
-For the high performance tests, a Surface Book with Intel's i7 processor was used \cite. It has a very fast SSD and runs Windows 10 \cite.
+The device with the most advanced hardware was a custom built computer with an Intel Core 6th generation i5 processor \cite over-clocked to 4.3 GHz. It had 32 GB double data rate fourth-generation (DDR4) memory \cite and one of the fastest solid state disk (SSD) currently available claiming 2200 MB/s reading speed and 900 MB/s writing speed \cite. This device was built to withstand high CPU loads, and was chosen to configure the parameters of the application and to stand as reference point for measurements with other devices.\\
+To get performance results from a second device a Surface Book with Intel Core i7 CPU with 2.6 GHz was used \cite. It had 16 GB DDR4 memory and also a fast SSD but not quite as fast as from the custom built computer (measured around 1600 MB/s read- and 600 MB/s write-speed). The results of the measurements on the Surface Book were used to compare the results from the main measuring device and, thus, allowed better evaluation of the overall performance of the ADCP parser.\\
+The real-time parsing requirement R1 of Section 3.1 of the software were evaluated with a BananaPro \cite. The BananaPro has a ARM Cortex-A7 Dual-Core CPU and 1 GB DDR3 memory \cite. The BananaPro runs a stripped Debian Linux derivate called Bananian \cite it allows the configuration of the BananaPro's hardware. It has to be powered over a universal serial bus (USB). The serial port capability was enabled with a universal asynchronous receiver transmitter (UART) to USB adapter, which communicates over the RS-232 interface. To measure voltage and current flow, a USB multimeter was used \cite. Other measuring instruments to calculate a more exact energy consumption value like an oscilloscope were not available.\\
+%image multimeter
+The different computing capabilities of the three devices allowed the evaluation of the software in terms of scalability. Scalability in this context refers to the ability of the software to adapt itself depending on the available hardware and use it accordingly.
+
+%%%%%%%%%%%%%%%%%
 \subsection{Performance}
+In the evaluation of the software project, the performance of the application has an important role. Eventually the performance decides about the usability of the solution in real world scenarios and therefore, it was tested and evaluated extensively.\\
+Before any measurements were taken, the application had to be configured properly depending on the hardware and the use case. In the configuration file are a few important settings that have to be considered carefully to optimize the performance.
+\begin{itemize}
+\item The size of the \texttt{SequenceBuffer} (described in Section 4.2) used in the processing thread, it should at least larger than the ADCP frame start sequence, to prevent a deadlock. Ideally, it should be larger than two times the size of the biggest ADCP frame that may be processed to prevent the processing thread from constantly auto discarding a few bytes in order to find the next start sequence.
+\item The size of the Moodycamel queues used to connect the threads. If they are set wrongly the application may slow down drastically due to congestion. To avoid confusion the two queues connecting the threads were numbered: (1) is the first queue, it is a byte queue and connects the input thread to the output thread, (2) is the second queue a and contains binary messages, it connects the processing- to the output thread.
+\end{itemize}
+
+For further calculations, an average ADCP frame size of the to be processed data was needed. The old ADCP data that was used for the performance tests had a 3992 Byte frame size for the horizontal ensemble, and a 992 Byte frame size for the vertical ping. The sum of both sizes was divided by two to get an average frame size of 2492 Byte. For the sake of simplicity further measurements in this report assumed an average frame size of 2500 Byte, which allowed simpler calculations.\\
+Based on this average frame size, an estimate on the minimal buffer size needed was simple, it should at least be 5000 Bytes, to prevent deadlock and initial auto discarding.
+
+The best sizes for the thread connecting queues could not be estimated easily. It could be sad that the first queue that connects the input- with the processing thread and holds the data as bytes, needs to be big enough that the processing thread can always dequeue data as needed and, thus, does not have to wait on data. Otherwise it could be assumed that the number of frames in the first queue should be more or less equal to the number of messages in the second queue to avoid congestions.\\ 
+To verify this assumptions, and get concrete numbers for the best queue sizes, a measurement was started. A bit more than one day ADCP data, exactly 150 bursts, were parsed over and over again. With a simple batch script, the application was executed under different queue size combinations. The execution time of each application call was written to the command line by the application and redirected into a file. The ADCP files were parsed over 1300 times, starting with very small queue sizes of 2 frames or messages in in the queues up to 400 frames or messages. \\
+It has to be considered that a frame is enqueued as a number of bytes in the byte queue (1) and a message is enqueued as one object into the message queue (2). The conversion of a frame to the required number of bytes was done with the averaged frame size of 2500 Byte from above, thus, if the first queue should contain 5 frames, the size should be set to 5 $\times$ 2500 = 12500 Byte.\\
+In the measurement, not only the number of frames in the queues was varied, but also the ratio between these queues was varied. The size of the first queue was varied between 90\% and 230\% of size from the second queue. Figure 5.1 presents the results, the xxx line displays the relation of the proportionality of the queues to the number of frames in each queue, the yyy line presents the associated time. It can be seen that if the queue sizes were too low the measured times were visibly slower, but after zzz frames in the queues, the execution speed varied only around 5 percent. It can be concluded that the queue sizes should not be to low to avoid the congestion, but the selected ratio does not play a big role performance wise. Surprisingly the use of more memory due to bigger queues does not improve the performance after a minimal required queue size, thus it can be concluded that the performance limiting factor was not the memory consumption of the software.
+
+To select a default value of the queue sizes for the configuration file, the ratio between the queues of the 20 fastest execution times were averaged. Table 5.1 shows the 20 fastest measures with its respective queue sizes. The average value was added at the end.
+
+To verify the measured behavior, the same test was executed on the Surface Book, Figure 5.2 presents the results, it can be seen that...//// thus ...///////////// 
+
+To reassess the new found memory independence, a new measurement was executed. This time with the fixed size ratio of BB calculated above between the queues. Once again sizes between two and 600 frames in the queues were measured, in 300 steps. The results are presented in Figure 5.3, it can be seen that ///////////////////// 
+
+Again a test was made with the Surface Book as comparison, the results in Figure 5.4 indicate... ////////////////
+
+After seeing that the memory consumption////////// some general tests were done where different amounts of old data were parsed under various parsing modes. Table 5.2 presents the resulting figures. 
+
+With this performance three years of old ADCP data could be parsed in under six hours, resulting in around 105 ms per 10-minutes burst. It can be concluded that this performance satisfies all needs in terms of post processing.
+
+To complete the post processing part, some exemplary data was 
+\subsubsection{Real-Time Parsing} 
+For the real-time processing, the focus to assess the performance was set to 
 \subsection{Memory Consumption}
-\subsection{Power Consumption}
+The memory handling of the software is straight forward. Most objects are allocated on the stack and eventual memory leaks of the heap were carefully eliminated, as the software may have to run infinitely and must not grow. After all components are instantiated, the allocated memory oscillates only very little, even if the application runs idle. The reason is, that most objects of the software are rather allocated once and overwritten, than destroyed and reallocated. Another reason is, all data structures are preallocated and prohibited to grow. This circumstance means that the maximal memory consummation can be estimated before running the application.\\
+Figure 5.X shows the memory consumption of the test run XX from the previous Section 5.1.2, one can see that the memory grows equally with the preset sizes of the queues. If similar estimates were made as in Section 5.1.2 and an average ADCP ensemble has an assumed size of 3500 Byte, it is possible to calculate the number of estimated ensembles in the system. To simplify this calculation it was assumed that only the ensembles in the byte queue from the input thread to the processing thread, as well as the message queue from the processing thread contain ensembles. The ensembles currently floating in the three threads were ignored.\\
+The estimated ensemble number was compared against the actual memory consumption. It can be seen that an ensemble in the application requires around 0.45 MB memory, in Figure 5.X the dashed line represents the used memory per ADCP ensemble. The value is high, 128 times of the estimated ensemble size. The reasons are, (1) the previously ignored floating ensembles in the threads come into play. If th queues are full, the input thread holds a buffer containing 30 percent of the data in the byte queue and the processing thread holds also a multiple of the currently processed ensemble e.g. in form of MATLAB matrices. Also (2) the moodycamel queues preallocate their memory in a way that all threads are always able to execute their desired nonblocking operation. This requires to maintain more memory than actually needed. 
+
+\subsection{Power Consummation}
+In Section 5.1.2 the performance of the software on the BananaPro in terms of speed was assessed, there, it was shown that the BananaPro is not made for batch-processing of old ADCP data, but that it is fast enough by far to process real-time data. It was also shown that the configuration for the BananaPro in real-time parsing mode gets along as few as X MB memory, and almost never exceeds CPU usage of more than 3 percent. 
+The missing information about the power consummation of the BananaPro was measured with the USB  multimeter described in Section 5.1.1. First the voltage and current was measured when the BananaPro was idle, Table 5.x presents the results of 280mA current with 5.24 V voltage. During the measurements the power adapter was changed because the old one could only deliver 750mA at 4.9 V which lead to variations of 60 mA. With the new power adapter, no more ups and downs could be measured.\\
 
 
 \section{Software Project Results}
@@ -30,35 +72,70 @@ The goal of this software project was the design and the implementation of a mod
 
 \begin{tabular}{|l|l|}
   \hline
-  	\textbf{Requirement R1} & The software should be able to parse real time ADCP data on a low-power data logger, clean it by removing unused information and thus enable the possibility of logging longer time periods due to the reduced size.\\ \hline
-  	\textbf{Result} & Fully completed and tested with virtual serial ports and high Baud rates (460800 Bd) and data throughput on a high performance Windows system, as well on a low-power ARM7 BananaPro with a real RS232 serial port and hardware restricted 115200Bd. The test setup is further described in Section 5.2.1.\\
+  	\textbf{Requirement R1} 
+  	& The software should be able to parse real time ADCP\\ 
+  	& data on a low-power data logger, clean it by removing unused\\
+  	& information and thus enable the possibility of logging longer\\
+  	& time periods due to the reduced size.\\ \hline
+  	\textbf{Result} 
+  	& Fully completed and tested with virtual serial ports and\\ 
+  	& high Baud rates (460800 Bd) and data throughput on a high \\ 
+  	& performance Windows system, as well on a low-power ARM7 \\ 
+  	& BananaPro with a real RS232 serial port and hardware \\ 
+  	& restricted 115200Bd. The test setupis further described \\
+  	& in Section 5.2.1.\\
   \hline
   \hline
-  	\textbf{Requirement R2} & The possibility of processing old raw data files with focus on speed rater than efficiency.\\ \hline
-  	\textbf{Result} & Fully completed, and tested with various old data files.\\
+  	\textbf{Requirement R2} 
+  	& The possibility of processing old raw data files with focus\\
+  	& on speed rater than efficiency.\\ \hline
+  	\textbf{Result} 
+  	& Fully completed, and tested with various old data files.\\
   \hline
   \hline
-  	\textbf{Requirement R3} & The application should scale according to the available hardware.\\ \hline
+  	\textbf{Requirement R3} 
+  	& The application should scale according to the available\\
+  	& hardware.\\ \hline
   	\textbf{Result} & Completed through a threaded approach.\\
   \hline
   \hline
-  	\textbf{Requirement R4} & The software should be portable. \\ \hline
-  	\textbf{Result} & Completed, the application was written in C++11 with the help of Boost libraries, and is completely platform independent.\\
+  	\textbf{Requirement R4} 
+  	& The software should be portable. \\ \hline
+  	\textbf{Result} 
+  	& Completed, the application was written in C++11 with the\\
+  	& help of Boost libraries, and is completely platform\\
+  	& independent.\\
   \hline
   \hline
-  	\textbf{Requirement R5} & Save electricity to go easy on the battery if operated by one.\\ \hline
-  	\textbf{Result} & Completed, the use of the low-level programming language C++ resulted in a high performance application that uses as little as possible processing time in real time parsing. \\
+  	\textbf{Requirement R5} 
+  	& Save electricity to go easy on the battery if operated by one.\\ \hline
+  	\textbf{Result} 
+  	& Completed, the use of the low-level programming language\\
+  	& C++ resulted in a high performance application that uses as\\
+  	& little as possible processing time in real time parsing. \\
   \hline
   \hline
-  	\textbf{Requirement R6} & The application should allow additional processing steps apart from the parsing.\\ \hline
-  	\textbf{Result} & Completed, the threaded component based approach from Section 3.2 fulfills this requirement. An additional requirement from General Acoustics e.K. was also implemented.\\
+  	\textbf{Requirement R6} 
+  	& The application should allow additional processing steps apart\\
+  	& from the parsing.\\ \hline
+  	\textbf{Result} 
+  	& Completed, the threaded component based approach from\\
+  	& Section 3.2 fulfills this requirement. An additional requirement\\
+  	& from General Acoustics e.K. was also implemented.\\
   \hline
   \hline
-  	\textbf{Requirement R7} & The architecture should allow other sensor types without having to change sensor unrelated code.\\ \hline
-  	\textbf{Result} & Completed, it would be possible to switch all ADCP related code with components from another sensor, and the application would work in the same manner.\\
+  	\textbf{Requirement R7} 
+  	& The architecture should allow other sensor types without\\
+  	& having to change sensor unrelated code.\\ \hline
+  	\textbf{Result} 
+  	& Completed, it would be possible to switch all ADCP related\\
+  	& code with components from another sensor, and the application\\
+  	& would work in the same manner.\\
   \hline
   \hline
-  	\textbf{Requirement R8} &  The software should be implemented in a well structured component based approach.\\ \hline
+  	\textbf{Requirement R8} 
+  	&  The software should be implemented in a well structured\\
+  	& component based approach.\\ \hline
   	\textbf{Result} & Completed \\
   \hline
   \hline
@@ -66,8 +143,13 @@ The goal of this software project was the design and the implementation of a mod
   	\textbf{Result} & Completed \\
   \hline
   \hline
-  	\textbf{Requirement R10} & Components with no dependency to the ADCP context should be implemented as completely independent components\\ \hline
-  	\textbf{Result} & Completed, MATLAB component \texttt{MatlabUtils}, sequence buffer \texttt{SequenceBuffer}, and binary input and output\texttt{BinaryIO} are implemented completely independent.\\
+  	\textbf{Requirement R10} 
+  	& Components with no dependency to the ADCP context should\\
+  	& be implemented as completely independent components\\ \hline
+  	\textbf{Result} 
+  	& Completed, MATLAB component \texttt{MatlabUtils}, sequence\\
+  	& buffer \texttt{SequenceBuffer}, and binary input and output\\
+  	& \texttt{BinaryIO} are implemented completely independent.\\
   \hline
 \end{tabular}
 
@@ -82,3 +164,4 @@ Other possibilities where the result of the software project could be compared a
 
 The software as it was implemented stands alone and can not really be compared to anything existing yet. 
 
+ Currently available software either from General Acoustics e.K. nor from Rowe Tech. Inc. cannot reach this performance by far. A direct comparison to these tools was not done, the software from Rowe Tech. Inc. was written in C\# and performs badly but was only thought to configure the ADCP and look at some data to verify that the ADCP was configured properly. The parsing software from General Acoustics e.K. was included in different applications, e.g. for graphical representation of the data or directly connected to a database.   
