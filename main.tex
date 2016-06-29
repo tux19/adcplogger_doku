@@ -329,7 +329,7 @@ This algorithm only works reliable if the number of missing bytes is not too hig
 \vspace{20em}
 \pagebreak
 
-\begin{lstlisting}[language=C++, caption=Code snippet from the repair function, it finds missing bytes.]
+\begin{lstlisting}[language=C++, caption=Code snippet from the repair function - it finds missing bytes.]
 size_t expectedSize = bins*beans* sizeof(boost::float32_t);
 size_t realSize = (posE4 - 5 * sizeof(int32_t)) - posE3;
 double difference = expectedSize-realSize;

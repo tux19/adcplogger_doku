@@ -90,7 +90,7 @@ To reassess the new found memory independence, a new measurement was executed. T
 
 \pagebreak
 After seeing that the memory consumption did not have a big impact on performance some general tests were done where different amounts of old data was parsed at a fixed configuration of 30 frames in the message queue (2) and a ratio of 1.6 for the byte queue (1). Table 5.2 presents the resulting figures. 
-
+\vspace{2em}
 \begin{table}[!h]
 \centering
 	\begin{tabular}{|l|c|c|}
@@ -98,17 +98,17 @@ After seeing that the memory consumption did not have a big impact on performanc
 	  	\textbf{Device} & \textbf{Desktop Computer} & \textbf{Surface Book}\\ \hline
 	  	\textbf{10 Minutes (5 MB)} & 152 ms & 238 ms\\
 	  	\textbf{1 Day (700 MB)} & 14.9 s & 20.95 s\\
-	  	\textbf{1 Week (4.9 GB)} & 104.3 s & s\\
+	  	\textbf{1 Week (4.9 GB)} & 104.3 s & 147.4 s\\
 	  \hline
 	\end{tabular}
-	\centering
-	\caption{Execution time at a fixed configuration and various amount\\ of data on the desktop computer and the Surface Book}
+	\caption{Execution time at a fixed configuration and various amount of data on the desktop computer and the Surface Book}
 \end{table}
+\vspace{1em}
 
 With this performance three years of old ADCP data could be parsed in under 5 hours, resulting in around 105 ms per 10-minutes burst. It can be concluded that this performance satisfies all needs in terms of post processing.
 
 To complete the post processing requirement measurements, the BananaPro was also used to post-process some old ADCP data. The results shown in Table 5.3 show really slow execution times of around XXX seconds per ADCP frame. The results are understandable, as the processor has not the power to do extensive data processing and was not built for it.
-
+\vspace{2em}
 \begin{table}[!h]
 \centering
 	\begin{tabular}{|l|c|}
@@ -118,10 +118,9 @@ To complete the post processing requirement measurements, the BananaPro was also
 	  	\textbf{1 Hour (30 MB)} & 47.8 s \\
 	  \hline
 	\end{tabular}
-	\begin{center}
-			\caption{Execution time at a fixed configuration and various amount\\ of data on the BananaPro}
-	\end{center}
+	\caption{Execution time at a fixed configuration and various amount of data on the BananaPro}
 \end{table}
+\vspace{1em}
 
 The memory consumption can be ruled out as performance critical bottleneck if a queue size larger than five frames is used. The real bottleneck in the current implementation is the processing thread, on the main computer, the core running the processing thread was always busy at 100\% whereas the overall CPU load never exceeded 65\%. Currently the processing thread does all CPU intensive work, it converts the ADCP frames to ADCP ensembles containing integers and floats, then cleans the data, and converts the ensemble back to a frame and later completely to bytes. The idea of this implementation was the preparation for further processing steps. For example, if a second processing step would be implemented for wave analysis, the first processing thread would only convert the data to ADCP ensembles, and pass them to the second thread, where they would used further. In the last part of Chapter 6 a solution to improve the current design is described.
 
@@ -137,8 +136,10 @@ The memory handling of the software is straight forward. Most objects are alloca
         \caption{Memory Consumption and execution time for various queue sizes}
 \end{figure}
 
-Figure 5.4 shows the memory consumption of the test run shown in Figure 5.3 from the previous Section 5.1.2, one can see that the memory grows equally with the preset sizes of the queues. With the average ADCP frame size of 2500 Byte calculated in Section 5.2.1 and the  it is possible to calculate the number of estimated ensembles in the system. To simplify this calculation it was assumed that only the ensembles in the byte queue from the input thread to the processing thread, as well as the message queue from the processing thread contain ensembles. The ensembles currently floating in the three threads were ignored.\\
-The estimated ensemble number was compared against the actual memory consumption. It can be seen that an ensemble in the application requires around 0.45 MB memory, in Figure 5.3 the red line represents the used memory per ADCP ensemble. The value is high, 128 times of the estimated ensemble size. The reasons are, (1) the previously ignored `floating' ensembles in the threads come into play. If the queues are full, the input thread holds a buffer containing 30 percent of the data in the byte queue and the processing thread holds also a multiple of the currently processed ensemble e.g. in form of MATLAB matrices. Also (2) the Moodycamel queues preallocate their memory in a way that all threads are always able to execute their desired nonblocking operation. This requires to maintain more memory than actually needed. 
+Figure 5.4 shows the memory consumption of the test run shown in Figure 5.3 from the previous Section 5.1.2, one can see that the memory grows equally with the preset sizes of the queues. 
+%ith the average ADCP frame size of 2500 Byte calculated in Section 5.2.1 and the number of frames in the message queue it is possible to calculate the number of estimated ensembles in the system. To simplify this calculation it was assumed that only the ensembles in the byte queue from the input thread to the processing thread, as well as the message queue from the processing thread contain ensembles. The ensembles currently floating in the three threads were ignored.\\
+%The estimated ensemble number was compared against the actual memory consumption. It can be seen that an ensemble in the application requires around 0.45 MB memory, 
+In Figure 5.4 the red line represents the used memory of the whole application. The memory used equals more or less the number of ensembles in the  message queue. The high values are because the Moodycamel queues preallocate their memory in a way that all threads are always able to execute their desired nonblocking operation. This requires to maintain more memory than actually needed. But as seen in Section 5.1.2 the application performs perfectly with a reasonable amount of memory, for example for the calculated average queue sizes, around 30 MB memory.
 
 \subsection{Power Consummation}
 In Section 5.1.2 the performance of the software on the BananaPro was assessed in terms of speed, there, it was shown that the BananaPro is not made for batch-processing of old ADCP data, but that it is fast enough by far to process real-time data. It was also shown that the configuration for the BananaPro in real-time parsing mode works well with as few as 4-5 MB memory, and almost never exceeds CPU usage of more than 3 percent.\\ 
@@ -157,10 +158,7 @@ The missing information about the power consummation of the BananaPro was measur
 	\label{tab:energy}
 \end{table}
 
-\section{Software Project Results}
-The goal of this software project was the design and the implementation of a modular ADCP parser as stated in Section 1.1. This software project was done in cooperation with General Acoustics e.K. and had to follow their requirements described in Section 3.1. The implemented solution was compared to these requirements and the results were presented in Table 5.1.
-
-\begin{table}[ht]
+\begin{table}[!ht]
 \centering
 	\begin{tabular}{|l|l|}
 	  \hline
@@ -173,9 +171,8 @@ The goal of this software project was the design and the implementation of a mod
 	  	& Fully completed and tested with virtual serial ports and\\ 
 	  	& high Baud rates (460800 Bd) and data throughput on a high \\ 
 	  	& performance Windows system, as well on a low-power ARM7 \\ 
-	  	& BananaPro with a real RS232 serial port and hardware \\ 
-	  	& restricted 115200Bd. The test setup is further described \\
-	  	& in Section 5.1.2.\\
+	  	& BananaPro with a real RS-232 serial port and hardware \\ 
+	  	& restricted 115200Bd.\\
 	  \hline
 	  \hline
 	  	\textbf{Requirement R2} 
@@ -244,8 +241,12 @@ The goal of this software project was the design and the implementation of a mod
 	  	& \texttt{BinaryIO} are implemented completely independent.\\
 	  \hline
 	\end{tabular}
-	\caption{asdsad}
+	\caption{Requirements posed by General Acoustics e.K. compared with the results of this software project}
 \end{table}
+
+\section{Software Project Results}
+
+The goal of this software project was the design and the implementation of a modular ADCP parser as stated in Section 1.1. This software project was done in cooperation with General Acoustics e.K. and had to follow their requirements described in Section 3.1. The implemented solution was compared to these requirements and the results were presented in Table 5.1.
 
 In addition to the implementation specific requirements, the code should also be properly documented to satisfy the expectations of General Acoustics e.K., particularly Jan Schirrmacher as he has to work with the solution in the future. The documentation was completed and signed off by Jan Schirrmacher.\\
 The Correctness of the software was tested through intensive parsing of real ADCP data in various modes and compare the results with results generated from a already tested parsing software developed by General Acoustics e.K. on Windows. To test the behavior on predefined error cases, a simple testing software was constructed that generates bursts of ADCP data with or without errors, and outputs them to a serial port. The source code of this testing application was included in Appendix B, it uses a lot of components developed in this software project. With this application the behavior on missing byte errors can be understood. Such errors happen often when the serial connection from the ADCP to the logger is bad, and was in recent projects the biggest point of failure for corrupted ADCP data.\\
