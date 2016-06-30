@@ -17,11 +17,12 @@
 \usepackage{longtable}
 \usepackage{textcomp}
 \usepackage{float}
-\usepackage{url}
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
 \usepackage{unizhdt}
 \usepackage{listings}
 \usepackage{color}
- 
+
 \definecolor{codegreen}{rgb}{0,0.6,0}
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
@@ -33,7 +34,7 @@
     keywordstyle=\color{magenta},
     numberstyle=\tiny\color{codegray},
     stringstyle=\color{codepurple},
-    basicstyle=\footnotesize,
+    basicstyle=\ttfamily\footnotesize,
     breakatwhitespace=false,         
     breaklines=true,                 
     captionpos=b,                    
@@ -83,7 +84,7 @@
 % Define the supervisors
 \supervisors{Dr. Corinna Schmitt, Dipl. Ing. (FH) Jan Schirrmacher}
 % Define the submission date
-\submissiondate{June 20, 2016}
+\submissiondate{June 30, 2016}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -96,9 +97,9 @@
 \pagenumbering{roman}
 
 % Include the files of the diploma thesis
-%\cleardoublepage
+\cleardoublepage
 \input{abstract.tex}
-%\cleardoublepage
+\cleardoublepage
 \input{acknowledgments.tex}
 
 \tableofcontents

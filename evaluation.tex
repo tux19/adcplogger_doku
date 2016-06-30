@@ -6,7 +6,7 @@ In this section, the performance of the implemented solution as well as its scal
 \subsection{Setup}
 The measurements of the developed software were executed on three different computing stations. Two high performance devices were used to test different software configurations and acquire execution speed results while post processing old ADCP data. To test the real-time parsing of ADCP data with energy consumption in mind, a Linux driven low-power device was used.
 
-The device with the most advanced hardware was a custom built computer with an Intel Core 6th generation i5 processor \cite{i5} over-clocked to 4.3 GHz. It had 32 GB double data rate fourth-generation (DDR4) memory \cite{ddr4} and one of the fastest solid state disk (SSD) currently available, claiming 2200 MB/s reading speed and 900 MB/s writing speed \cite{ssd}. This device was built to withstand high CPU loads, and was chosen to configure the parameters of the application and to stand as reference point for measurements with other devices.
+The device with the most advanced hardware was a custom built computer with an Intel Core 6th generation i5 processor \cite{i5} over-clocked to 4.3 GHz. It had 32 GB double data rate fourth-generation (DDR4) memory \cite{ddr4} and one of the fastest solid state disk (SSD) currently available, claiming 2200 MB/s reading speed and 900 MB/s writing speed \cite{ssd}. This device was built to withstand high CPU loads, and was chosen to configure the parameters of the application and to serve as reference point for measurements with other devices.
 
 To get performance results from a second device a Surface Book with Intel Core i7 CPU clocked at 2.6 GHz was used \cite{sb}. It had 16 GB DDR4 memory and also a fast SSD but not quite as fast as from the custom built computer (measured around 1600 MB/s read- and 600 MB/s write-speed). The results of the measurements on the Surface Book were used to compare the results from the main measuring device and, thus, gather a better impression of the overall performance of the ADCP parser application.\\
 The real-time parsing requirement R1 of Section 3.1 of the software was evaluated with a BananaPro. The BananaPro has a ARM Cortex-A7 Dual-Core CPU and 1 GB DDR3 memory \cite{bpro} and runs a stripped Debian Linux derivate called Bananian Linux \cite{bananian}, it allows the configuration of the BananaPro's hardware. It has to be powered over a universal serial bus (USB). The serial port capability was enabled with a universal asynchronous receiver transmitter (UART) to USB adapter, which communicates over the RS-232 interface. To measure voltage and current flow, a USB multimeter was used \cite{mul}. Other measuring instruments to calculate a more exact energy consumption value like an oscilloscope were not available.
@@ -15,13 +15,13 @@ The different computing capabilities of the three devices allowed the evaluation
 %%%%%%%%%%%%%%%%%
 \subsection{Performance}
 In the evaluation of the software project, the performance of the application has an important role. Eventually the performance decides about the usability of the solution in real world scenarios and therefore, it was tested and evaluated extensively. Performance in this context relates to the execution time of the application.\\
-Before any measurements were taken, the application had to be configured properly depending on the hardware and the use case. In the configuration file are a few important settings that have to be considered carefully to optimize the performance.
+Before any measurements were taken, the application had to be configured properly depending on the hardware and the use case. In the configuration file are a few important settings that have to be considered carefully to optimize the performance:
 \begin{itemize}
-\item The size of the \texttt{SequenceBuffer} (described in Section 4.2) used in the processing thread, it should at least be larger than the ADCP frame start sequence, to prevent a deadlock. Ideally, it should be larger than two times the size of the biggest ADCP frame that may be processed to prevent the processing thread from constantly auto discarding a few bytes in order to find the next start sequence.
+\item The size of the \texttt{SequenceBuffer} (described in Section 4.2) used in the processing thread. It should at least be larger than the ADCP frame start sequence, to prevent a deadlock. Ideally, it should be larger than two times the size of the biggest ADCP frame that may be processed to prevent the processing thread from constantly auto discarding a few bytes in order to find the next start sequence.
 \item The size of the Moodycamel queues used to connect the threads. If they are set wrongly the application may slow down drastically due to congestion. To avoid confusion the two queues connecting the threads were numbered: (1) is the first queue, it is a byte queue and connects the input thread to the output thread, (2) is the second queue a and contains binary messages, it connects the processing- to the output thread.
 \end{itemize}
 
-For further calculations, an average ADCP frame size of the data to be processed, was needed. The old ADCP data that was used for the performance tests had a 3992 Byte frame size for the horizontal ping, and a 992 Byte frame size for the vertical ping. The sum of both sizes was divided by two to get an average frame size of 2492 Byte. For the sake of simplicity further measurements in this report assumed an average frame size of 2500 Byte, which allowed simpler calculations.\\
+For further calculations, an average ADCP frame size of the data, was needed. The old ADCP data that was used for the performance tests had a 3992 Byte frame size for the horizontal ping, and a 992 Byte frame size for the vertical ping. The sum of both sizes was divided by two to get an average frame size of 2492 Byte. For the sake of simplicity further measurements in this report assumed an average frame size of 2500 Byte, which allowed simpler calculations.\\
 Based on this average frame size, an estimate on the minimal buffer size needed was simple, it should at least be 5000 Bytes, to prevent deadlock and initial auto discarding.
 
 The best sizes for the thread connecting queues could not be estimated easily. It could be sad that the first queue that connects the input- with the processing thread and holds the data as bytes, needs to be big enough that the processing thread can always dequeue data as needed and, thus, does not have to wait on data. Otherwise it could be assumed that the number of frames in the first queue should be equal or bigger than the number of messages in the second queue to avoid congestions.\\ 
@@ -34,7 +34,7 @@ It had to be considered that a frame is enqueued as a number of bytes in the byt
         \caption{Measurement of 150 ADCP bursts under various queue configurations on a desktop computer}
 \end{figure}
 
-In the measurement, not only the number of frames in the queues were varied, but also the ratio between these queues was varied. The size of the first queue was varied between 90\% and 230\% of size from the second queue. Figure 5.1 presents the results, the light-blue zigzag line displays the ratio of the first queue (1) to the second queue (2), the darker line presents the measured time in milliseconds. The x-axis shows the number of frames in the message queue (2). It can be seen that, if the queue sizes were under five frames the measured times were visibly slower, but with values larger than five frames in the queues, the execution speed varied only around 5 percent. The outliers appeared to be random and may come from additional workload through background tasks of Windows. It can be concluded that the queue sizes should not be to low to avoid the congestion, but the selected ratio does not play a big role performance wise. Surprisingly the use of more memory due to bigger queues does not improve the performance after the minimal required queue size is reached, thus it can also be concluded that the performance limiting factor was not the memory consumption of the software.
+In the measurement, not only the number of frames in the queues were varied, but also the ratio between these queues was varied. The size of the first queue was varied between 90\% and 230\% of size from the second queue. Figure 5.1 presents the results, the light-blue zigzag line displays the ratio of the first queue (1) to the second queue (2), the darker line presents the measured time in milliseconds. The x-axis shows the number of frames in the message queue (2). It can be seen that, if the queue sizes were under five frames the measured times were visibly slower, but with values larger than five frames in the queues, the execution speed varied only around 5 \%. The outliers appeared to be random and may come from additional workload through background tasks of Windows. It can be concluded that the queue sizes should not be to low to avoid the congestion, but the selected ratio does not play a big role performance wise. Surprisingly the use of more memory due to bigger queues does not improve the performance after the minimal required queue size is reached, thus it can also be concluded that the performance limiting factor was not the memory consumption of the software.
 
 To select a default value of the queue sizes for the configuration file, the ratio between the queues of the 50 fastest execution times were averaged. Table 5.1 shows the 20 fastest measures with its respective queue sizes. The average value over the 50 measure points was added at the end. 
 
@@ -42,7 +42,7 @@ To select a default value of the queue sizes for the configuration file, the rat
 \centering
 	\begin{tabular}{l|c|c|c}
 	  \hline
-	  	&\textbf{Execution Time} & \textbf{Ratio (1)} & \textbf{Framenumber in(2)}\\\hline 
+	  	&\textbf{Execution Time} & \textbf{Ratio (1)} & \textbf{Frame number in(2)}\\\hline 
 	  	& 15335.1 ms & 1.268 & 25\\
 		& 15335.1 ms & 0.932 & 30\\
 		& 15336.2 ms & 1.396 & 85\\
@@ -107,7 +107,7 @@ After seeing that the memory consumption did not have a big impact on performanc
 
 With this performance three years of old ADCP data could be parsed in under 5 hours, resulting in around 105 ms per 10-minutes burst. It can be concluded that this performance satisfies all needs in terms of post processing.
 
-To complete the post processing requirement measurements, the BananaPro was also used to post-process some old ADCP data. The results shown in Table 5.3 show really slow execution times of around XXX seconds per ADCP frame. The results are understandable, as the processor has not the power to do extensive data processing and was not built for it.
+To complete the post processing requirement measurements, the BananaPro was also used to post-process some old ADCP data. The results shown in Table 5.3 show really slow execution times of around 8 seconds per ADCP frame. The results are understandable, as the processor has not the power to do extensive data processing and was not built for it.
 \vspace{2em}
 \begin{table}[!h]
 \centering
@@ -122,28 +122,28 @@ To complete the post processing requirement measurements, the BananaPro was also
 \end{table}
 \vspace{1em}
 
-The memory consumption can be ruled out as performance critical bottleneck if a queue size larger than five frames is used. The real bottleneck in the current implementation is the processing thread, on the main computer, the core running the processing thread was always busy at 100\% whereas the overall CPU load never exceeded 65\%. Currently the processing thread does all CPU intensive work, it converts the ADCP frames to ADCP ensembles containing integers and floats, then cleans the data, and converts the ensemble back to a frame and later completely to bytes. The idea of this implementation was the preparation for further processing steps. For example, if a second processing step would be implemented for wave analysis, the first processing thread would only convert the data to ADCP ensembles, and pass them to the second thread, where they would used further. In the last part of Chapter 6 a solution to improve the current design is described.
+The memory consumption can be ruled out as performance critical bottleneck if a queue size larger than five frames is used. The real bottleneck in the current implementation is the processing thread, on the main computer, the core running the processing thread was always busy at 100\% whereas the overall CPU load never exceeded 65\%. Currently the processing thread does all CPU intensive work, it converts the ADCP frames to ADCP ensembles containing integers and floats, then cleans the data, and converts the ensemble back to a frame and later completely to bytes. The idea of this implementation was the preparation for further processing steps. For example, if a second processing step would be implemented for wave analysis, the first processing thread would only convert the data to ADCP ensembles, and pass them to the second thread, where they would be used further. In the last part of Chapter 6 a solution to improve the current design is described.
 
 \subsubsection{Real-Time Parsing} 
-The real-time processing, was tested first under Windows. A pair of virtual COM ports was used to test high data throughput with a Baud rate of 468000 Bd. This Baud rate is also used for the real ADCP communication over an RS-485 interface. The application run flawlessly consuming 5 MB memory and one percent CPU usage, even with five times of the data that would be generated by an ADCP.\\
+The real-time processing, was tested first under Windows. A pair of virtual COM ports was used to test high data throughput with a Baud rate of 468000 Bd. This Baud rate is also used for the real ADCP communication over an RS-485 interface. The application run flawlessly consuming 5 MB memory and 1\% CPU usage, even with five times of the data that would be generated by an ADCP.\\
 The tests with the BananaPro had to be done over RS-232 interfaces as no appropriate RS-485 hardware was available. The RS-232 adapters used allowed a maximum Baud rate of 115200 Bd, this was just enough to receive two times the data that would normally be generated by an ADCP.\\
-On the BananaPro the application used again around 5 MB memory, and burdened the CPU with a maximum of 3 percent CPU load. The reached performance is really good, as the data to be processed from a real ADCP would be lower and, thus, the CPU load would be as well lower.
+On the BananaPro the application used again around 5 MB memory, and burdened the CPU with a maximum of 3\% CPU load. The reached performance is really good, as the data to be processed from a real ADCP would be lower and, thus, the CPU load would be as well lower.
 \subsection{Memory Consumption}
 The memory handling of the software is straight forward. Most objects are allocated on the stack and eventual memory leaks of the heap were carefully eliminated, as the software may have to run infinitely and must not grow. After all components are instantiated, the allocated memory oscillates only very little, even if the application runs idle. The reason is, that most objects of the software are rather allocated once and overwritten, than destroyed and reallocated. Another reason is, all data structures are preallocated and prohibited to grow. This circumstance means that the maximal memory consummation can be estimated before running the application.\\
 \begin{figure}[h]
 \centering
       \includegraphics[width=1\textwidth]{perf_mem_2}
-        \caption{Memory Consumption and execution time for various queue sizes}
+        \caption{Memory consumption and execution time for various queue sizes}
 \end{figure}
 
-Figure 5.4 shows the memory consumption of the test run shown in Figure 5.3 from the previous Section 5.1.2, one can see that the memory grows equally with the preset sizes of the queues. 
+Figure 5.4 shows the memory consumption of the test run shown in Figure 5.3. One can see that the memory grows equally with the preset sizes of the queues. 
 %ith the average ADCP frame size of 2500 Byte calculated in Section 5.2.1 and the number of frames in the message queue it is possible to calculate the number of estimated ensembles in the system. To simplify this calculation it was assumed that only the ensembles in the byte queue from the input thread to the processing thread, as well as the message queue from the processing thread contain ensembles. The ensembles currently floating in the three threads were ignored.\\
 %The estimated ensemble number was compared against the actual memory consumption. It can be seen that an ensemble in the application requires around 0.45 MB memory, 
 In Figure 5.4 the red line represents the used memory of the whole application. The memory used equals more or less the number of ensembles in the  message queue. The high values are because the Moodycamel queues preallocate their memory in a way that all threads are always able to execute their desired nonblocking operation. This requires to maintain more memory than actually needed. But as seen in Section 5.1.2 the application performs perfectly with a reasonable amount of memory, for example for the calculated average queue sizes, around 30 MB memory.
 
-\subsection{Power Consummation}
-In Section 5.1.2 the performance of the software on the BananaPro was assessed in terms of speed, there, it was shown that the BananaPro is not made for batch-processing of old ADCP data, but that it is fast enough by far to process real-time data. It was also shown that the configuration for the BananaPro in real-time parsing mode works well with as few as 4-5 MB memory, and almost never exceeds CPU usage of more than 3 percent.\\ 
-The missing information about the power consummation of the BananaPro was measured with the USB multimeter described in Section 5.1.1. First the voltage and current was measured when the BananaPro was idle and then while executing the application. During the measurements the power adapter was changed because the old one could only deliver 750mA at 4.9 V which lead to variations of 60 mA. With the new power adapter which could deliver up th 2.4 A, no more ups and downs could be measured. Table 5.x presents the results of the measurements with the new power adapter, with a stable voltage, and a difference of 10 mA for the current. The multimeter only had a 10 mA resolution and therefore the measurement is not very exact, but it shows at least that the power consumption does not exceed 10 mA which is a maximum 3.5 percent of the overall power consumption.
+\subsection{Power Consumption}
+In Section 5.1.2 the performance of the software on the BananaPro was assessed in terms of speed, there, it was shown that the BananaPro is not made for batch-processing of old ADCP data, but that it is fast enough by far to process real-time data. It was also shown that the configuration for the BananaPro in real-time parsing mode works well with as few as 4-5 MB memory, and almost never exceeds CPU usage of more than 3\%.\\ 
+The missing information about the power consumption of the BananaPro was measured with the USB multimeter described in Section 5.1.1. First the voltage and current was measured when the BananaPro was idle and then while executing the application. During the measurements the power adapter was changed because the old one could only deliver 750mA at 4.9 V which lead to variations of 60 mA. With the new power adapter which could deliver up th 2.4 A, no more ups and downs could be measured. Table 5.x presents the results of the measurements with the new power adapter, with a stable voltage, and a difference of 10 mA for the current. The multimeter only had a 10 mA resolution and therefore the measurement is not very exact, but it shows at least that the power consumption does not exceed 10 mA which is a maximum 3.5 percent of the overall power consumption.
 
 \begin{table}[h]
 	\centering
@@ -154,7 +154,7 @@ The missing information about the power consummation of the BananaPro was measur
 	  current [mA] & 280 mA& 290 mA\\ 
 	  \hline
 	\end{tabular}
-	\caption{Comparison of power consummation on the BananaPro, between idle and parsing real time ADCP data.}
+	\caption{Comparison of power consumption on the BananaPro, between idle and parsing real-time ADCP data.}
 	\label{tab:energy}
 \end{table}
 
@@ -163,7 +163,7 @@ The missing information about the power consummation of the BananaPro was measur
 	\begin{tabular}{|l|l|}
 	  \hline
 	  	\textbf{Requirement R1} 
-	  	& The software should be able to parse real time ADCP\\ 
+	  	& The software should be able to parse real-time ADCP\\ 
 	  	& data on a low-power data logger, clean it by removing unused\\
 	  	& information and, thus, enable the possibility of logging longer\\
 	  	& time periods due to the reduced size.\\ \hline
@@ -202,7 +202,7 @@ The missing information about the power consummation of the BananaPro was measur
 	  	\textbf{Result} 
 	  	& Completed, the use of the low-level programming language\\
 	  	& C++ resulted in a high performance application that uses as\\
-	  	& little as possible processing time in real time parsing. \\
+	  	& little as possible processing time in real-time parsing. \\
 	  \hline
 	  \hline
 	  	\textbf{Requirement R6} 
@@ -249,7 +249,7 @@ The missing information about the power consummation of the BananaPro was measur
 The goal of this software project was the design and the implementation of a modular ADCP parser as stated in Section 1.1. This software project was done in cooperation with General Acoustics e.K. and had to follow their requirements described in Section 3.1. The implemented solution was compared to these requirements and the results were presented in Table 5.1.
 
 In addition to the implementation specific requirements, the code should also be properly documented to satisfy the expectations of General Acoustics e.K., particularly Jan Schirrmacher as he has to work with the solution in the future. The documentation was completed and signed off by Jan Schirrmacher.\\
-The Correctness of the software was tested through intensive parsing of real ADCP data in various modes and compare the results with results generated from a already tested parsing software developed by General Acoustics e.K. on Windows. To test the behavior on predefined error cases, a simple testing software was constructed that generates bursts of ADCP data with or without errors, and outputs them to a serial port. The source code of this testing application was included in Appendix B, it uses a lot of components developed in this software project. With this application the behavior on missing byte errors can be understood. Such errors happen often when the serial connection from the ADCP to the logger is bad, and was in recent projects the biggest point of failure for corrupted ADCP data.\\
+The Correctness of the software was tested through intensive parsing of real ADCP data in various modes and compare the results with results generated from an already tested parsing software developed by General Acoustics e.K. on Windows. To test the behavior on predefined error cases, a simple testing software was constructed that generates bursts of ADCP data with or without errors, and outputs them to a serial port. The source code of this testing application was included in Appendix B, it uses a lot of components developed in this software project. With this application the behavior on missing byte errors can be understood. Such errors happen often when the serial connection from the ADCP to the logger is bad, and was in recent projects the biggest point of failure for corrupted ADCP data.\\
 The application reacted as expected, in the cleaning mode, it only considered frames that were completely intact and ignored frames with failures. If the application was run in repair mode, it tried to correct errors and returned frames that could be repaired. For the repair functionality it was essential that the number of missing bytes did not exceed two bytes per ensemble matrix, otherwise the possibility of wrong values that are semantically correct, rises, and the quality of the data can not be guaranteed.\\
 
 \subsection{Comparison to Similar Solutions}
